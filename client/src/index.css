@@ -1,0 +1,21 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@300;400;500;600;700;800;900&display=swap');
+
+@theme {
+  --color-background: #FDFBF7;
+  --color-primary-light: #2E6652;
+  --color-primary: #1B4332;
+  --color-primary-dark: #0C2219;
+  --color-secondary-light: #FF7D42;
+  --color-secondary: #E8530A;
+  --color-secondary-dark: #B03A00;
+  --color-accent-teal: #0D6E6E;
+  --color-accent-red: #C62828;
+  --font-family-sans: "Noto Sans Bengali", sans-serif;
+}
+
+body {
+  background-color: #FDFBF7;
+  color: #1f2937;
+  font-family: 'Noto Sans Bengali', sans-serif;
+}

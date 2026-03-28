@@ -1,0 +1,19 @@
+{
+  "name": "aponkhoj",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "preview": "cd client && npm run preview"
+  },
+  "keywords": [],
+  "author": "HUJAEADI",
+  "license": "ISC",
+  "dependencies": {
+    "lucide-react": "^0.577.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.1"
+  }
+}
