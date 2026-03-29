@@ -1,22 +1,91 @@
-**/dist
-**/build
-**/vendor
+# Environment variables - NEVER commit these!
+.env
+.env.local
+.env.*.local
+.env.production.local
 
+# Dependencies
+node_modules/
+server/node_modules/
+client/node_modules/
+package-lock.json
+server/package-lock.json
+client/package-lock.json
 
-**/node_modules
-**/public/hot
-**/public/storage
-**/storage/*.key
-**/vendor
-**/.env
-**/.env.production
-**/.env.backup
-**/.phpunit.result.cache
-**/docker-compose.override.yml
-**/Homestead.json
-**/Homestead.yaml
-**/npm-debug.log
-**/yarn-error.log
-**/.idea
-**/.vscode
-**/*.sqlite
+# Build outputs
+dist/
+server/dist/
+client/dist/
+build/
+server/build/
+
+# Prisma
+prisma/migrations/
+server/prisma/migrations/
+.prisma/
+
+# IDE and Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.vim
+.DS_Store
+Thumbs.db
+*.sublime-workspace
+*.sublime-project
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Temp files
+tmp/
+temp/
+*.tmp
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Optional ADDITIONAL patterns for Node/Prisma projects:
+yarn.lock
+.yarn/
+.pnpm-lock.yaml
+*.tgz
+.turbo/
+.next/
+out/
+# Prisma Studio
+prisma/studio.env
+# VS Code workspace settings
+.vscode/settings.json
+.vscode/launch.json
+# macOS
+.AppleDouble
+.LSOverride
+# Windows
+*.bat
+*.cmd
+# npm cache
+.npm/
+# yarn cache
+.yarn/cache/
