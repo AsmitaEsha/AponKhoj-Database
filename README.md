@@ -1,38 +1,66 @@
-# AponKhoj
+# 🔍 AponKhoj - Missing & Found Persons Platform
 
-This is the **AponKhoj** full-stack project.  
-It has a structured folder setup with separate **client**, **server**, and **database** directories, making it easy to organize your application logic and development workflow.
-
----
-
-## Project Structure
-
-project-root/
-├── client/ # Frontend application (React, Vue, etc.)
-├── server/ # Backend application (Laravel, Node.js, etc.)
-└── database/ # Database migrations, seeders, or SQL scripts
-
-
-- **client**: Your frontend code, responsible for UI and API requests.
-- **server**: The backend code (Laravel API in this template) handling business logic and serving API endpoints.
-- **database**: Database schema, migrations, and seed data.
+A full-stack web application to help find missing persons and report found individuals in Bangladesh.
 
 ---
 
-## Prerequisites
+## 📋 Project Overview
+
+**AponKhoj** is a community-driven platform that enables users to:
+- 📱 Report missing persons with details and photos
+- 🔎 Search for missing persons in their area
+- ✅ Report found persons to help reunite them with families
+- 👨‍💼 Manage user profiles and reports
+- 🛡️ Admin moderation and content management
+
+---
+
+## ✨ Tech Stack
+
+### Frontend
+- **React 18** - UI framework
+- **Vite** - Build tool
+- **Tailwind CSS** - Styling
+- **React Router** - Navigation
+- **Lucide Icons** - Icon library
+- **React Hot Toast** - Notifications
+
+### Backend
+- **Node.js** - Runtime
+- **Express.js** - API framework
+- **Prisma ORM** - Database ORM
+- **MSSQL Server** - Database
+
+---
+
+## 📋 Prerequisites
 
 Make sure the following are installed:
 
-- PHP >= 8.1 (for Laravel backend)
-- Composer
-- Node.js >= 18
-- npm or Yarn
-- MySQL / PostgreSQL / SQLite
+- **Node.js** >= 18.x ([Download](https://nodejs.org/))
+- **npm** >= 9.x (comes with Node.js)
+- **MSSQL Server** (Local or Cloud instance)
+- **Git**
+- **VS Code** (Recommended)
 
 ---
 
-## Setup Instructions
+## 🚀 Setup Instructions
+
+### 1️⃣ Clone the Repository
 
 ```bash
-git clone <repository-url>
-cd project-root
+git clone https://github.com/AsmitaEsha/AponKhoj-Database.git
+cd AponKhoj-Database
+# Install root dependencies
+npm install
+
+# Install client dependencies
+cd client
+npm install
+cd ..
+
+# Install server dependencies
+cd server
+npm install
+cd ..
