@@ -6,7 +6,6 @@ import HomePage from './views/HomePage';
 import LoginPage from './views/LoginPage';
 import RegistrationPage from './views/RegistrationPage';
 import ForgotPasswordPage from './views/ForgotPassword';
-import RegistrationVerificationPage from './views/RegistrationVerificationPage';
 import TermsPage from './views/TermsPage';
 import UserProfilePage from './views/UserProfilePage';
 import AdminDashboardPage from './views/AdminDashboardPage';
@@ -46,7 +45,6 @@ function AppShell() {
           <Route path="/help" element={<HelpPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/dashboard" element={<UserDashboardPage />} />
-          <Route path="/verify-email" element={<RegistrationVerificationPage />} />
           <Route path="/found" element={<FoundListPage />} />
           <Route path="/search-page" element={<SearchPage />} />
           <Route path="/report-found" element={<ReportFoundPage />} />

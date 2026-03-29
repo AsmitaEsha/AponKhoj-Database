@@ -1,11 +1,17 @@
 {
   "name": "aponkhoj",
   "version": "1.0.0",
-  "description": "",
+  "description": "AponKhoj - Full Stack Application",
   "scripts": {
-    "dev": "cd client && npm run dev",
-    "build": "cd client && npm run build",
-    "preview": "cd client && npm run preview"
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
+    "build": "npm run build:server && npm run build:client",
+    "build:server": "cd server && npm run build",
+    "build:client": "cd client && npm run build",
+    "prisma:generate": "cd server && prisma generate",
+    "prisma:migrate": "cd server && prisma migrate dev",
+    "prisma:studio": "cd server && prisma studio"
   },
   "keywords": [],
   "author": "HUJAEADI",
@@ -14,6 +20,7 @@
     "lucide-react": "^0.577.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.2.1"
+    "@tailwindcss/postcss": "^4.2.1",
+    "concurrently": "^8.2.2"
   }
 }

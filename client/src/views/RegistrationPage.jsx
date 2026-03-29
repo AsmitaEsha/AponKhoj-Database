@@ -29,8 +29,7 @@ const RegistrationPage = () => {
         toast.success('রেজিস্ট্রেশন সফল হয়েছে!');
         setLoading(false);
         
-        // Navigate to verification page with email
-        navigate('/verify-email', { state: { email: form.email } });
+        navigate('/dashboard');
     };
 
     const districts = ['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
