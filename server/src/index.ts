@@ -4,7 +4,6 @@ import dotenv from "dotenv";
 import { prisma } from "./db.js";
 import authRouter from "./routes/auth.js";
 import requireAuth from "./middleware/auth.js";
-
 // Load environment variables from .env file in parent directory
 dotenv.config({ path: "../.env" });
 
@@ -24,7 +23,6 @@ app.use("/auth", authRouter);
  */
 app.get("/api/health", async (req: Request, res: Response) => {
   try {
-    // Simple query to test connection
     const result = await prisma.$queryRaw`SELECT 1 as connected`;
 
     res.status(200).json({
@@ -148,19 +146,19 @@ app.get("/api/users/:id", async (req: Request, res: Response) => {
 });
 
 /**
- * Create a new user
+ * Create a new user (Registration)
  * POST http://localhost:5000/api/users
- * Body: { "email": "user@example.com", "name": "John Doe", "age": 25 }
+ * Body: { "email": "user@example.com", "name": "John Doe", "password": "pass123", "phone": "01700000000", "location": "ঢাকা" }
  */
 app.post("/api/users", async (req: Request, res: Response) => {
   try {
-    const { email, name, age } = req.body;
+    const { email, name, password, phone, location } = req.body;
 
     // Validation
-    if (!email) {
+    if (!email || !password) {
       res.status(400).json({
         status: "error",
-        message: "Email is required",
+        message: "Email and password are required",
       });
       return;
     }
@@ -183,7 +181,8 @@ app.post("/api/users", async (req: Request, res: Response) => {
       data: {
         email,
         name: name || null,
-        age: age || null,
+        phone: phone || null,
+        location: location || null,
       },
     });
 
@@ -205,19 +204,20 @@ app.post("/api/users", async (req: Request, res: Response) => {
 /**
  * Update a user
  * PUT http://localhost:5000/api/users/:id
- * Body: { "email": "newemail@example.com", "name": "Jane Doe" }
+ * Body: { "email": "newemail@example.com", "name": "Jane Doe", "phone": "01800000000", "location": "চট্টগ্রাম" }
  */
 app.put("/api/users/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { email, name, age } = req.body;
+    const { email, name, password, phone, location } = req.body;
 
     const user = await prisma.user.update({
       where: { id: parseInt(id) },
       data: {
         ...(email && { email }),
         ...(name && { name }),
-        ...(age !== undefined && { age }),
+        ...(phone && { phone }),
+        ...(location && { location }),
       },
     });
 
@@ -381,7 +381,7 @@ app.listen(PORT, () => {
   console.log(`\nðŸ“š API Endpoints:`);
   console.log(`  Users: GET    /api/users`);
   console.log(`         GET    /api/users/:id`);
-  console.log(`         POST   /api/users`);
+  console.log(`         POST   /api/users (Registration)`);
   console.log(`         PUT    /api/users/:id`);
   console.log(`         DELETE /api/users/:id`);
   console.log(`  Posts: GET    /api/posts`);
