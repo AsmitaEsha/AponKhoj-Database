@@ -2,6 +2,8 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { prisma } from "./db.js";
+import authRouter from "./routes/auth.js";
+import requireAuth from "./middleware/auth.js";
 
 // Load environment variables from .env file in parent directory
 dotenv.config({ path: "../.env" });
@@ -12,6 +14,7 @@ const PORT = process.env.PORT || 5000;
 // ==================== MIDDLEWARE ====================
 app.use(cors());
 app.use(express.json());
+app.use("/auth", authRouter);
 
 // ==================== HEALTH CHECK ====================
 /**
@@ -23,10 +26,10 @@ app.get("/api/health", async (req: Request, res: Response) => {
   try {
     // Simple query to test connection
     const result = await prisma.$queryRaw`SELECT 1 as connected`;
-    
+
     res.status(200).json({
       status: "success",
-      message: "✅ Database connection successful",
+      message: "âœ… Database connection successful",
       timestamp: new Date().toISOString(),
       database: {
         provider: "MS SQL Server",
@@ -35,10 +38,10 @@ app.get("/api/health", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("❌ Database connection error:", error);
+    console.error("âŒ Database connection error:", error);
     res.status(500).json({
       status: "error",
-      message: "❌ Database connection failed",
+      message: "âŒ Database connection failed",
       error: error instanceof Error ? error.message : "Unknown error",
       timestamp: new Date().toISOString(),
       troubleshooting: [
@@ -49,6 +52,29 @@ app.get("/api/health", async (req: Request, res: Response) => {
         "5. Check network connectivity",
       ],
     });
+  }
+});
+
+// ==================== PROTECTED AUTH PROFILE ====================
+/**
+ * Get current logged-in user's profile (requires Authorization: Bearer <token>)
+ * GET http://localhost:5000/api/me
+ */
+app.get("/api/me", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    if (!userId) return res.status(400).json({ error: "No userId in token" });
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true, age: true },
+    });
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json({ user });
+  } catch (err) {
+    console.error("Error in /api/me:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -312,6 +338,30 @@ app.post("/api/posts", async (req: Request, res: Response) => {
   }
 });
 
+// ==================== ROOT & ROUTE LOGGER (ADDED) ====================
+
+// Root health/info route (fixes GET / returning 404)
+app.get("/", (req: Request, res: Response) => {
+  res.status(200).json({
+    status: "ok",
+    message: "API is running",
+    info: "Use /api/* for API endpoints. Health check: /api/health",
+  });
+});
+
+// Optional: print registered routes for debugging (safe to remove later)
+try {
+  const registeredRoutes = (app as any)._router?.stack
+    .filter((r: any) => r.route)
+    .map((r: any) => {
+      const methods = Object.keys(r.route.methods).map((m) => m.toUpperCase()).join(",");
+      return `${methods} ${r.route.path}`;
+    });
+  console.log("Registered routes:", registeredRoutes);
+} catch (err) {
+  console.log("Route logging failed:", err);
+}
+
 // ==================== ERROR HANDLING ====================
 app.use((req: Request, res: Response) => {
   res.status(404).json({
@@ -324,11 +374,11 @@ app.use((req: Request, res: Response) => {
 // ==================== START SERVER ====================
 app.listen(PORT, () => {
   console.log(`\n${"=".repeat(60)}`);
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-  console.log(`📊 Database: MS SQL Server (Windows Authentication)`);
-  console.log(`🔗 Health Check: GET http://localhost:${PORT}/api/health`);
+  console.log(`âœ… Server running on http://localhost:${PORT}`);
+  console.log(`ðŸ“Š Database: MS SQL Server (Windows Authentication)`);
+  console.log(`ðŸ”— Health Check: GET http://localhost:${PORT}/api/health`);
   console.log(`${"=".repeat(60)}`);
-  console.log(`\n📚 API Endpoints:`);
+  console.log(`\nðŸ“š API Endpoints:`);
   console.log(`  Users: GET    /api/users`);
   console.log(`         GET    /api/users/:id`);
   console.log(`         POST   /api/users`);
@@ -339,9 +389,9 @@ app.listen(PORT, () => {
   console.log(`${"=".repeat(60)}\n`);
 });
 
-// ==================== GRACEFUL SHUTDOWN ====================
+// ==================== SHUTDOWN ====================
 process.on("SIGINT", async () => {
-  console.log("\n\n🛑 Shutting down gracefully...");
+  console.log("\n\nðŸ›‘ Shutting down gracefully...");
   await prisma.$disconnect();
   process.exit(0);
 });

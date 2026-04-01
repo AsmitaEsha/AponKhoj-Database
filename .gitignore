@@ -90,3 +90,5 @@ prisma/studio.env
 .npm/
 # yarn cache
 .yarn/cache/".env" 
+server/.env
+*.backup
