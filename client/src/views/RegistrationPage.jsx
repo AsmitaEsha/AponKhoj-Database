@@ -15,21 +15,69 @@ const RegistrationPage = () => {
 
     const handleRegister = async (e) => {
         e.preventDefault();
-        
+
         // Validate password match
         if (form.password !== form.password_confirmation) {
             toast.error('পাসওয়ার্ড এবং নিশ্চিত পাসওয়ার্ড মিলছে না');
             return;
         }
-        
+
         setLoading(true);
-        
-        // TODO: Replace with real API call when backend is ready
-        await new Promise(r => setTimeout(r, 800)); // simulate network
-        toast.success('রেজিস্ট্রেশন সফল হয়েছে!');
-        setLoading(false);
-        
-        navigate('/dashboard');
+
+        try {
+            const resp = await fetch('http://localhost:5000/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: form.name,
+                    email: form.email,
+                    password: form.password,
+                    // backend may ignore extra fields, but we include them
+                    phone: form.phone,
+                    location: form.location,
+                }),
+            });
+
+            const data = await resp.json();
+
+            if (!resp.ok) {
+                toast.error(data.error || data.message || 'রেজিস্ট্রেশন ব্যর্থ হয়েছে');
+                setLoading(false);
+                return;
+            }
+
+            // store token if returned
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+            }
+
+            // try to fetch profile from protected endpoint
+            try {
+                const token = data.token || localStorage.getItem('token');
+                if (token) {
+                    const meResp = await fetch('http://localhost:5000/api/me', {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    const meJson = await meResp.json();
+                    if (meResp.ok && meJson.user) {
+                        toast.success('রেজিস্ট্রেশন সফল হয়েছে!');
+                        navigate('/dashboard');
+                        setLoading(false);
+                        return;
+                    }
+                }
+            } catch (err) {
+                // ignore profile fetch error, continue to success
+            }
+
+            toast.success('রেজিস্ট্রেশন সফল হয়েছে!');
+            navigate('/dashboard');
+        } catch (err) {
+            console.error('Register error', err);
+            toast.error('সার্ভারে সমস্যা, পরে চেষ্টা করুন');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const districts = ['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];

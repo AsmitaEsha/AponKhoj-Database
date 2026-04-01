@@ -8,14 +8,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model - Updated to match registration form
+// User model
 model User {
-  id        Int     @id @default(autoincrement())
-  email     String  @unique
-  name      String?
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
   password  String?
-  phone     String?
-  location  String?  // Division/District
+  name      String?
+  age       Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   posts     Post[]
@@ -23,11 +22,11 @@ model User {
 
 // Post model
 model Post {
-  id        Int     @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   title     String
   content   String?
   userId    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

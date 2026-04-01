@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Search, Loader2 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
+import toast from 'react-hot-toast';
 
 const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -15,24 +16,58 @@ const LoginPage = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
-        // ── TODO: replace this mock with a real API call ──
-        // const res = await apiClient.login({ email, password });
-        // login(res.user, res.token);
-        await new Promise(r => setTimeout(r, 800)); // simulate network
-        login(
-            {
-                name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-                email,
-                phone: '',
-                location: '',
-                role: loginType,   // 'user' or 'admin'
-                joinDate: new Date().toLocaleDateString('bn-BD'),
-            },
-            'mock-token-' + Date.now()
-        );
-        setLoading(false);
-        // role-based redirect
-        navigate(loginType === 'admin' ? '/admin/dashboard' : '/dashboard');
+
+        try {
+            const resp = await fetch('http://localhost:5000/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await resp.json();
+
+            if (!resp.ok) {
+                toast.error(data.error || data.message || 'লগইন ব্যর্থ হয়েছে');
+                setLoading(false);
+                return;
+            }
+
+            // store token if returned
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+            }
+
+            // fetch profile from protected endpoint
+            try {
+                const token = data.token || localStorage.getItem('token');
+                if (token) {
+                    const meResp = await fetch('http://localhost:5000/api/me', {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    const meJson = await meResp.json();
+                    if (meResp.ok && meJson.user) {
+                        // set auth context with profile and token
+                        login(meJson.user, data.token || token);
+                        toast.success('লগইন সফল হয়েছে');
+                        navigate(loginType === 'admin' ? '/admin/dashboard' : '/dashboard');
+                        setLoading(false);
+                        return;
+                    }
+                }
+            } catch (err) {
+                // ignore and fallback
+            }
+
+            // fallback: call login with minimal info if profile not available
+            login({ email }, data.token || localStorage.getItem('token'));
+            toast.success('লগইন সফল হয়েছে');
+            navigate(loginType === 'admin' ? '/admin/dashboard' : '/dashboard');
+        } catch (err) {
+            console.error('Login error', err);
+            toast.error('নেটওয়ার্ক বা সার্ভার সমস্যা');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
