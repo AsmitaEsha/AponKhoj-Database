@@ -85,7 +85,8 @@ prisma/studio.env
 # Windows
 *.bat
 *.cmd
+
 # npm cache
 .npm/
 # yarn cache
-.yarn/cache/
+.yarn/cache/".env" 
