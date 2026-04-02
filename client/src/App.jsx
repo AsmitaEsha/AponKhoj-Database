@@ -37,30 +37,28 @@ function AppShell() {
       {!isAdminRoute && <Navbar />}
       <main className="flex-grow">
         <Routes>
-          {/* Public / User routes */}
+          {/* Public routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegistrationPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="/terms" element={<TermsPage />} />
-          <Route path="/dashboard" element={<UserDashboardPage />} />
           <Route path="/found" element={<FoundListPage />} />
           <Route path="/search-page" element={<SearchPage />} />
           <Route path="/report-found" element={<ReportFoundPage />} />
-
           <Route path="/about" element={<AboutPage />} />
           <Route path="/success-stories" element={<SuccessStoriesPage />} />
           <Route path="/report-missing" element={<ReportMissingPage />} />
-          <Route path="/profile" element={<UserProfilePage />} />
-          <Route path="/report-found" element={<ReportFoundPage />} />
-          <Route path="/search" element={<SearchPage />} />
           <Route path="/legal-aid" element={<LegalAidPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/contact" element={<ContactPage />} />
-          {/* Add more routes here */}
 
-          {/* Admin-only routes */}
+          {/* User protected routes */}
+          <Route path="/dashboard" element={<UserDashboardPage />} />
+          <Route path="/profile" element={<UserProfilePage />} />
+
+          {/* Admin protected routes */}
           <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
           <Route path="/admin/profile" element={<AdminRoute><AdminProfilePage /></AdminRoute>} />
           <Route path="/admin/moderation" element={<AdminRoute><AdminModerationPage /></AdminRoute>} />
@@ -70,22 +68,17 @@ function AppShell() {
       <Toaster
         position="top-center"
         toastOptions={{
-          error: {
-            duration: 5000,
-          },
+          error: { duration: 5000 },
         }}
       />
     </div>
   );
 }
 
-// AponKhoj App
-function App() {
+export default function App() {
   return (
     <AuthProvider>
       <AppShell />
     </AuthProvider>
   );
 }
-
-export default App;

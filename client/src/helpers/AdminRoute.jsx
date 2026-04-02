@@ -1,19 +1,20 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 
-/**
- * AdminRoute — protects /admin/* pages.
- * - Not logged in           → /login
- * - Logged in, not admin    → /dashboard  (normal user)
- * - Logged in, role=admin   → renders children
- */
 export default function AdminRoute({ children }) {
     const { isAuthenticated, isAdmin, loading } = useAuth();
 
-    if (loading) return null; // wait for localStorage restore
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+        );
+    }
 
-    if (!isAuthenticated) return <Navigate to="/login" replace />;
-    if (!isAdmin) return <Navigate to="/dashboard" replace />;
+    if (!isAuthenticated || !isAdmin) {
+        return <Navigate to="/" replace />;
+    }
 
     return children;
 }

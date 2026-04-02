@@ -1,71 +1,148 @@
-import express, { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import { Router, Request, Response } from 'express';
+import { db } from '../db.js';
+import { hashPassword, comparePassword, generateToken } from '../utils/auth.js';
+import { validateEmail, validatePassword, validatePhone, validateName, validateLocation } from '../utils/validators.js';
+import { isAdminCredential } from '../utils/adminConfig.js';
 
-const prisma = new PrismaClient();
-const router = express.Router();
+const router = Router();
 
-// POST /auth/register
-router.post("/register", async (req: Request, res: Response) => {
+// Admin emails that cannot be registered as regular users
+const ADMIN_EMAILS = [
+  'humayrabintekazal@gmail.com',
+  'asmitaesha123@gmail.com',
+  'jamilamuhammad18052000@gmail.com'
+];
+
+router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { email, password, name, age } = req.body;
-    if (!email || !password) return res.status(400).json({ error: "Email and password required" });
+    const { firstName, lastName, email, phone, location, password, password_confirmation } = req.body;
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) return res.status(409).json({ error: "User already exists" });
+    if (!firstName || !lastName || !email || !phone || !location || !password) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
 
-    const hashed = await bcrypt.hash(password, 10);
-    const user = await prisma.user.create({
+    if (!validateEmail(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    if (!validatePhone(phone)) {
+      return res.status(400).json({ error: 'Invalid phone number' });
+    }
+
+    // NEW: Check if email is an admin email
+    if (ADMIN_EMAILS.includes(email.toLowerCase())) {
+      return res.status(409).json({ error: 'This email is reserved for admin use and cannot be registered' });
+    }
+
+    if (!validatePassword(password)) {
+      return res.status(400).json({ error: 'Password too weak' });
+    }
+
+    if (password !== password_confirmation) {
+      return res.status(400).json({ error: 'Passwords do not match' });
+    }
+
+    const existingUser = await db.user.findFirst({
+      where: {
+        OR: [
+          { email: email.toLowerCase() },
+          { phone }
+        ]
+      }
+    });
+
+    if (existingUser) {
+      return res.status(409).json({ error: 'User already exists' });
+    }
+
+    const hashedPassword = await hashPassword(password);
+
+    const user = await db.user.create({
       data: {
-        email,
-        password: hashed,
-        name: name ?? null,
-        age: age ?? null,
-      },
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.toLowerCase(),
+        phone,
+        location: location.trim(),
+        password: hashedPassword,
+        role: 'user'
+      }
     });
 
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET ?? "dev-secret",
-      { expiresIn: "7d" }
-    );
+    const token = generateToken(user.id, user.role);
 
-    res.json({
+    res.status(201).json({
+      message: 'Registration successful',
       token,
-      user: { id: user.id, email: user.email, name: user.name, age: user.age },
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role
+      }
     });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
+  } catch (error) {
+    console.error('Register error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// POST /auth/login
-router.post("/login", async (req: Request, res: Response) => {
+router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: "Email and password required" });
 
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !user.password) return res.status(401).json({ error: "Invalid credentials" });
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
 
-    const ok = await bcrypt.compare(password, user.password);
-    if (!ok) return res.status(401).json({ error: "Invalid credentials" });
+    const isAdmin = isAdminCredential(email, password);
 
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET ?? "dev-secret",
-      { expiresIn: "7d" }
-    );
+    if (isAdmin) {
+      const adminToken = generateToken(0, 'admin');
+      return res.json({
+        message: 'Admin login successful',
+        token: adminToken,
+        user: {
+          id: 0,
+          firstName: 'Admin',
+          lastName: 'User',
+          email,
+          role: 'admin'
+        }
+      });
+    }
+
+    const user = await db.user.findUnique({
+      where: { email: email.toLowerCase() }
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const isValidPassword = await comparePassword(password, user.password);
+
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = generateToken(user.id, user.role);
 
     res.json({
+      message: 'Login successful',
       token,
-      user: { id: user.id, email: user.email, name: user.name, age: user.age },
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role
+      }
     });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

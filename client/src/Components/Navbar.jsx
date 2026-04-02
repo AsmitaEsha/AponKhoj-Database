@@ -9,12 +9,22 @@ import { useAuth } from '../helpers/AuthContext';
 /* Avatar initials helper */
 const NavAvatar = ({ user }) => {
     if (user?.avatarUrl) {
-        return <img src={user.avatarUrl} alt={user.name}
+        return <img src={user.avatarUrl} alt={user.firstName}
             className="w-8 h-8 rounded-full object-cover border-2 border-primary/20" />;
     }
-    const initials = user?.name
-        ? user.name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase()
-        : '?';
+    
+    // ✅ FIX: Use firstName and lastName instead of name
+    const getInitials = () => {
+        if (user?.firstName || user?.lastName) {
+            const first = user.firstName ? user.firstName[0].toUpperCase() : '';
+            const last = user.lastName ? user.lastName[0].toUpperCase() : '';
+            return (first + last) || '?';
+        }
+        return '?';
+    };
+    
+    const initials = getInitials();
+    
     return (
         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center
                         text-primary font-black text-xs border-2 border-primary/20">
@@ -112,7 +122,7 @@ const Navbar = () => {
                                 >
                                     <NavAvatar user={user} />
                                     <span className="text-sm font-semibold text-gray-700 max-w-[110px] truncate">
-                                        {user?.name?.split(' ')[0] || 'আমার অ্যাকাউন্ট'}
+                                        {user?.firstName || 'আমার অ্যাকাউন্ট'}
                                     </span>
                                     {isAdmin && (
                                         <span className="text-[9px] font-black text-red-600 bg-red-100
@@ -134,7 +144,7 @@ const Navbar = () => {
                                             <div className="flex items-center gap-2.5">
                                                 <NavAvatar user={user} />
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-bold text-gray-800 truncate">{user?.name || '—'}</p>
+                                                    <p className="text-sm font-bold text-gray-800 truncate">{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.firstName || '—'}</p>
                                                     <p className="text-xs text-gray-400 truncate">{user?.email || '—'}</p>
                                                 </div>
                                             </div>
@@ -208,7 +218,7 @@ const Navbar = () => {
                                 <div className="flex items-center gap-2.5 px-3 py-2 border-t border-gray-50 mt-2 pt-3">
                                     <NavAvatar user={user} />
                                     <div>
-                                        <p className="text-sm font-bold text-gray-800">{user?.name || '—'}</p>
+                                        <p className="text-sm font-bold text-gray-800">{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.firstName || '—'}</p>
                                         <p className="text-xs text-gray-400">{user?.email || '—'}</p>
                                     </div>
                                 </div>
