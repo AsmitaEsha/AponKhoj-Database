@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 
 const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
-    const [loginType, setLoginType] = useState('user'); // 'user' or 'admin'
+    const [loginType, setLoginType] = useState('user');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -27,44 +27,31 @@ const LoginPage = () => {
             const data = await resp.json();
 
             if (!resp.ok) {
-                toast.error(data.error || data.message || 'লগইন ব্যর্থ হয়েছে');
+                toast.error(data.error || 'Login failed');
                 setLoading(false);
                 return;
             }
 
-            // store token if returned
-            if (data.token) {
-                localStorage.setItem('token', data.token);
+            // Check if user role matches login type
+            if (loginType === 'admin' && data.user.role !== 'admin') {
+                toast.error('Admin access denied');
+                setLoading(false);
+                return;
             }
 
-            // fetch profile from protected endpoint
-            try {
-                const token = data.token || localStorage.getItem('token');
-                if (token) {
-                    const meResp = await fetch('http://localhost:5000/api/me', {
-                        headers: { Authorization: `Bearer ${token}` },
-                    });
-                    const meJson = await meResp.json();
-                    if (meResp.ok && meJson.user) {
-                        // set auth context with profile and token
-                        login(meJson.user, data.token || token);
-                        toast.success('লগইন সফল হয়েছে');
-                        navigate(loginType === 'admin' ? '/admin/dashboard' : '/dashboard');
-                        setLoading(false);
-                        return;
-                    }
-                }
-            } catch (err) {
-                // ignore and fallback
+            if (loginType === 'user' && data.user.role === 'admin') {
+                toast.error('Please use admin login for admin account');
+                setLoading(false);
+                return;
             }
 
-            // fallback: call login with minimal info if profile not available
-            login({ email }, data.token || localStorage.getItem('token'));
-            toast.success('লগইন সফল হয়েছে');
+            // Store token and user
+            login(data.user, data.token);
+            toast.success('Login successful');
             navigate(loginType === 'admin' ? '/admin/dashboard' : '/dashboard');
         } catch (err) {
             console.error('Login error', err);
-            toast.error('নেটওয়ার্ক বা সার্ভার সমস্যা');
+            toast.error('Server error, please try again');
         } finally {
             setLoading(false);
         }
@@ -84,25 +71,27 @@ const LoginPage = () => {
                     <p className="text-gray-500 text-sm mt-1">আপনার অ্যাকাউন্টে প্রবেশ করুন</p>
                 </div>
 
-                {/* Switch Bar for User/Admin */}
+                {/* User/Admin Toggle */}
                 <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-lg">
                     <button
                         type="button"
                         onClick={() => setLoginType('user')}
-                        className={`flex-1 py-2.5 px-4 rounded-md font-medium text-sm transition-all cursor-pointer ${loginType === 'user'
-                            ? 'bg-white text-gray-800 shadow-sm'
-                            : 'bg-transparent text-gray-600 hover:text-gray-800'
-                            }`}
+                        className={`flex-1 py-2.5 px-4 rounded-md font-medium text-sm transition-all cursor-pointer ${
+                            loginType === 'user'
+                                ? 'bg-white text-gray-800 shadow-sm'
+                                : 'bg-transparent text-gray-600 hover:text-gray-800'
+                        }`}
                     >
                         সাধারণ ব্যবহারকারী
                     </button>
                     <button
                         type="button"
                         onClick={() => setLoginType('admin')}
-                        className={`flex-1 py-2.5 px-4 rounded-md font-medium text-sm transition-all cursor-pointer ${loginType === 'admin'
-                            ? 'bg-white text-gray-800 shadow-sm'
-                            : 'bg-transparent text-gray-600 hover:text-gray-800'
-                            }`}
+                        className={`flex-1 py-2.5 px-4 rounded-md font-medium text-sm transition-all cursor-pointer ${
+                            loginType === 'admin'
+                                ? 'bg-white text-gray-800 shadow-sm'
+                                : 'bg-transparent text-gray-600 hover:text-gray-800'
+                        }`}
                     >
                         অ্যাডমিন
                     </button>
@@ -136,26 +125,36 @@ const LoginPage = () => {
                                 required
                                 className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                             />
-                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                            >
                                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                             </button>
                         </div>
-                        <div className="text-right mt-2">
-                            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                                পাসওয়ার্ড ভুলে গেছেন?
-                            </Link>
-                        </div>
                     </div>
 
-                    <button type="submit" disabled={loading}
-                        className="w-full bg-primary hover:bg-primary-dark text-white py-2.5 rounded-lg font-medium transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-                        {loading ? <><Loader2 size={16} className="animate-spin" /> লগইন হচ্ছে...</> : 'লগইন করুন'}
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full bg-primary hover:bg-primary-dark text-white py-2.5 rounded-lg font-medium transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 size={16} className="animate-spin" /> লগইন হচ্ছে...
+                            </>
+                        ) : (
+                            'লগইন করুন'
+                        )}
                     </button>
                 </form>
 
                 <p className="text-center text-sm text-gray-500 mt-6">
                     অ্যাকাউন্ট নেই?{' '}
-                    <Link to="/register" className="text-primary font-medium hover:underline">রেজিস্ট্রেশন করুন</Link>
+                    <Link to="/register" className="text-primary font-medium hover:underline">
+                        রেজিস্ট্রেশন করুন
+                    </Link>
                 </p>
             </div>
         </div>

@@ -28,12 +28,22 @@ const inputCls = (hasIcon = true, hasError = false) =>
 const Avatar = ({ user, size = 'lg' }) => {
     const sz = size === 'lg' ? 'w-20 h-20 text-2xl' : 'w-12 h-12 text-base';
     if (user?.avatarUrl) {
-        return <img src={user.avatarUrl} alt={user.name}
+        return <img src={user.avatarUrl} alt={user.firstName}
             className={`${sz} rounded-full object-cover border-4 border-white shadow-md`} />;
     }
-    const initials = user?.name
-        ? user.name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase()
-        : '?';
+    
+    // ✅ FIX: Use firstName and lastName instead of name
+    const getInitials = () => {
+        if (user?.firstName || user?.lastName) {
+            const first = user.firstName ? user.firstName[0].toUpperCase() : '';
+            const last = user.lastName ? user.lastName[0].toUpperCase() : '';
+            return (first + last) || '?';
+        }
+        return '?';
+    };
+    
+    const initials = getInitials();
+    
     return (
         <div className={`${sz} rounded-full bg-primary/10 border-4 border-white shadow-md
                          flex items-center justify-center font-black text-primary`}>
@@ -44,10 +54,11 @@ const Avatar = ({ user, size = 'lg' }) => {
 
 /* ═══════════════════════════════════════════
    TAB: Personal Info
-═══════════════════════════════════════════ */
+════��══════════════════════════════════════ */
 function PersonalInfoTab({ user, updateUser }) {
     const [form, setForm] = useState({
-        name: user?.name || '',
+        firstName: user?.firstName || '',
+        lastName: user?.lastName || '',
         phone: user?.phone || '',
         location: user?.location || '',
     });
@@ -96,7 +107,7 @@ function PersonalInfoTab({ user, updateUser }) {
                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                 </div>
                 <div>
-                    <p className="font-bold text-gray-800">{user?.name || '—'}</p>
+                    <p className="font-bold text-gray-800">{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.firstName || '—'}</p>
                     <p className="text-xs text-gray-400 mt-0.5">{user?.email || '—'}</p>
                     <p className="text-xs text-primary mt-1 cursor-pointer hover:underline"
                         onClick={() => fileRef.current.click()}>ছবি পরিবর্তন করুন</p>
@@ -104,9 +115,14 @@ function PersonalInfoTab({ user, updateUser }) {
             </div>
 
             <form onSubmit={handleSave} className="space-y-5">
-                <Field label="পূর্ণ নাম" icon={User}>
-                    <input className={inputCls()} name="name" value={form.name}
-                        onChange={handleChange} placeholder="আপনার পূর্ণ নাম" />
+                <Field label="প্রথম নাম" icon={User}>
+                    <input className={inputCls()} name="firstName" value={form.firstName}
+                        onChange={handleChange} placeholder="আপনার প্রথম নাম" />
+                </Field>
+
+                <Field label="শেষ নাম" icon={User}>
+                    <input className={inputCls()} name="lastName" value={form.lastName}
+                        onChange={handleChange} placeholder="আপনার শেষ নাম" />
                 </Field>
 
                 <Field label="ইমেইল (পরিবর্তনযোগ্য নয়)" icon={Mail}>
@@ -362,7 +378,7 @@ function MyReportsTab() {
 function HelpTab() {
     const faqs = [
         { q: 'রিপোর্ট জমা দিতে কত সময় লাগে?', a: 'রিপোর্ট জমা দিতে মাত্র ৫ মিনিট সময় লাগে। সব তথ্য দিলে দ্রুত প্রক্রিয়া সম্পন্ন হয়।' },
-        { q: 'AI ম্যাচিং কীভাবে কাজ করে?', a: 'আমাদের AI ফেস রিকগনিশন সিস্টেম জমা দেওয়া ছবি বিশ্লেষণ করে এবং ডাটাবেজে থাকা অন্যান্য রিপোর্টের সাথে মিলিয়ে দেখে।' },
+        { q: 'AI ম্যাচিং কীভাবে কাজ করে?', a: 'আমাদের AI ফেস রিকগনিশন সিস্টেম জমা দেওয়��� ছবি বিশ্লেষণ করে এবং ডাটাবেজে থাকা অন্যান্য রিপোর্টের সাথে মিলিয়ে দেখে।' },
         { q: 'আমার ব্যক্তিগত তথ্য কি সুরক্ষিত?', a: 'হ্যাঁ, আমরা আপনার তথ্য সম্পূর্ণ সুরক্ষিত রাখি এবং তৃতীয় পক্ষের সাথে শেয়ার করি না।' },
         { q: 'কোনো সাফল্যের গল্প আছে কি?', a: 'হ্যাঁ, আমাদের প্ল্যাটফর্মের মাধ্যমে ইতিমধ্যে বেশ কিছু পরিবার পুনর্মিলিত হয়েছে।' },
     ];
@@ -481,7 +497,7 @@ export default function UserProfilePage() {
                         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
                             <div className="flex flex-col items-center text-center">
                                 <Avatar user={user} size="lg" />
-                                <p className="font-black text-gray-800 mt-3 text-sm">{user?.name || '—'}</p>
+                                <p className="font-black text-gray-800 mt-3 text-sm">{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.firstName || '—'}</p>
                                 <p className="text-xs text-gray-400 mt-0.5 break-all">{user?.email || '—'}</p>
                                 {user?.location && (
                                     <span className="inline-flex items-center gap-1 text-[10px] text-primary
@@ -533,7 +549,7 @@ export default function UserProfilePage() {
                             <div className="flex items-center gap-3 p-4 border-b border-gray-50">
                                 <Avatar user={user} size="sm" />
                                 <div className="flex-1">
-                                    <p className="text-sm font-bold text-gray-800">{user?.name || '—'}</p>
+                                    <p className="text-sm font-bold text-gray-800">{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.firstName || '—'}</p>
                                     <p className="text-xs text-gray-400">{user?.email || '—'}</p>
                                 </div>
                             </div>

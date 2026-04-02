@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
 
-// Status Badge 
+// Status Badge
 const StatusBadge = ({ status }) => {
     const styles = {
         pending: 'bg-yellow-50 text-yellow-600 border-yellow-200',
@@ -16,10 +16,10 @@ const StatusBadge = ({ status }) => {
         closed: 'bg-gray-50 text-gray-500 border-gray-200',
     };
     const labels = {
-        pending: 'অপেক্ষমাণ',
-        verified: 'যাচাইকৃত',
-        matched: 'ম্যাচ পাওয়া',
-        closed: 'বন্ধ',
+        pending: 'αªàαª¬αºçαªòαºìαª╖αª«αª╛αªú',
+        verified: 'αª»αª╛αªÜαª╛αªçαªòαºâαªñ',
+        matched: 'αª«αºìαª»αª╛αªÜ αª¬αª╛αªôαª»αª╝αª╛',
+        closed: 'αª¼αª¿αºìαªº',
     };
     return (
         <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full border ${styles[status] || styles.pending}`}>
@@ -28,19 +28,39 @@ const StatusBadge = ({ status }) => {
     );
 };
 
-// Skeleton Loader 
+// Skeleton Loader
 const Skeleton = ({ className = '' }) => (
     <div className={`animate-pulse bg-gray-100 rounded-lg ${className}`} />
 );
 
+// Helper function to get user initials
+const getInitials = (firstName, lastName) => {
+    if (!firstName && !lastName) return '?';
+    const first = firstName ? String(firstName)[0]?.toUpperCase() : '';
+    const last = lastName ? String(lastName)[0]?.toUpperCase() : '';
+    return (first + last) || '?';
+};
+
 // Main Component
 export default function UserDashboardPage() {
-    const { user } = useAuth();                          // real user from AuthContext
+    const { user } = useAuth();
     const [reports, setReports] = useState([]);
     const [notifications, setNotifications] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // ✅ NEW: Track user changes for debugging
+    useEffect(() => {
+        console.log('📊 Dashboard: User changed!');
+        console.log('User object:', user);
+        if (user?.firstName || user?.lastName) {
+            console.log('Initials will be:', getInitials(user.firstName, user.lastName));
+        } else {
+            console.log('No firstName/lastName available');
+        }
+    }, [user]);
+
+    // Loading state
     useEffect(() => {
         const timer = setTimeout(() => {
             setReports([]);
@@ -72,6 +92,7 @@ export default function UserDashboardPage() {
             </div>
         );
     }
+
     return (
         <div className="min-h-screen bg-background">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
@@ -79,7 +100,7 @@ export default function UserDashboardPage() {
                 {/* ── Welcome ── */}
                 <div className="mb-6">
                     <h1 className="text-2xl font-black text-gray-800">
-                        স্বাগতম{user?.name ? `, ${user.name.split(' ')[0]}` : ''}! 👋
+                        স্বাগতম{user?.firstName ? `, ${user.firstName}` : ''}! 👋
                     </h1>
                     <p className="text-gray-500 text-sm mt-1">আপনার ড্যাশবোর্ড থেকে সব কার্যক্রম পরিচালনা করুন</p>
                 </div>
@@ -135,7 +156,6 @@ export default function UserDashboardPage() {
                                 </div>
                             ) : (
                                 <div className="divide-y divide-gray-50">
-                                    {/* TODO: reports will come from API: reports.map(r => ...) */}
                                     {reports.map(r => (
                                         <div key={r.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50/50 transition-colors group">
                                             <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black ${r.type === 'missing' ? 'bg-red-50 text-secondary' : 'bg-teal-50 text-teal-600'}`}>
@@ -219,7 +239,6 @@ export default function UserDashboardPage() {
                                 </div>
                             ) : (
                                 <div className="divide-y divide-gray-50">
-                                    {/* TODO: notifications will come from API */}
                                     {notifications.map((n, i) => (
                                         <div key={n.id || i} className={`flex items-start gap-3 px-4 py-3 ${n.urgent ? 'bg-purple-50/40' : ''}`}>
                                             <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${n.urgent ? 'bg-purple-500' : 'bg-gray-200'}`} />
@@ -236,10 +255,18 @@ export default function UserDashboardPage() {
                         {/* Profile Card */}
                         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                             <h2 className="font-bold text-gray-800 text-sm mb-4">আমার তথ্য</h2>
+
+                            {/* Avatar with Initials */}
+                            <div className="flex justify-center mb-4">
+                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white text-2xl font-black shadow-sm">
+                                    {getInitials(user?.firstName, user?.lastName)}
+                                </div>
+                            </div>
+
                             <div className="space-y-2.5 text-xs text-gray-500 mb-4">
                                 <div className="flex items-center gap-2">
                                     <UserCircle2 size={13} className="text-gray-300 flex-shrink-0" />
-                                    <span>{user?.name || '—'}</span>
+                                    <span>{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.firstName || '—'}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <MapPin size={13} className="text-gray-300 flex-shrink-0" />

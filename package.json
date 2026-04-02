@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.1",
+    "@types/node": "^25.5.0",
     "concurrently": "^8.2.2"
   }
 }
