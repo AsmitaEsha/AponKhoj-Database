@@ -202,7 +202,7 @@ const HomePage = () => {
                         <Link to="/register" className="w-full sm:w-auto bg-secondary text-white px-7 py-3 rounded-xl font-bold text-sm hover:bg-secondary-dark transition-colors shadow-lg">
                             রেজিস্ট্রেশন করুন
                         </Link>
-                        <Link to="/search" className="w-full sm:w-auto bg-white/10 border border-white/20 text-white px-7 py-3 rounded-xl font-bold text-sm hover:bg-white/20 transition-colors">
+                        <Link to="/search-page" className="w-full sm:w-auto bg-white/10 border border-white/20 text-white px-7 py-3 rounded-xl font-bold text-sm hover:bg-white/20 transition-colors">
                             তালিকা দেখুন
                         </Link>
                     </div>

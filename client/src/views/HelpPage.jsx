@@ -53,7 +53,7 @@ const GUIDES = [
 const QUICK_ACTIONS = [
     { icon: FileText, label: 'নিখোঁজ রিপোর্ট করুন', link: '/report-missing', color: 'bg-primary text-white' },
     { icon: Users, label: 'উদ্ধার তথ্য দিন', link: '/report-found', color: 'bg-secondary text-white' },
-    { icon: Search, label: 'অনুসন্ধান করুন', link: '/search', color: 'bg-accent-teal text-white' },
+    { icon: Search, label: 'অনুসন্ধান করুন', link: '/search-page', color: 'bg-accent-teal text-white' },
     { icon: Phone, label: 'জরুরি যোগাযোগ', link: '/contact', color: 'bg-accent-red text-white' },
 ];
 

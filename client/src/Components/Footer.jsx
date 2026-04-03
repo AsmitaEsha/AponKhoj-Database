@@ -58,8 +58,8 @@ const Footer = () => {
                             </li>
                             <li>
                                 <Link 
-                                    to="/search" 
-                                    onClick={(e) => handleProtectedLink(e, '/search')}
+                                    to="/search-page" 
+                                    onClick={(e) => handleProtectedLink(e, '/search-page')}
                                     className="hover:text-white transition-colors inline-flex items-center gap-1"
                                 >
                                     অনুসন্ধান করুন
