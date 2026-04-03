@@ -292,15 +292,8 @@ function OverviewSection({ data }) {
                     <p className="text-sm text-gray-400 mt-0.5">{today}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600
-                                     bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        সিস্টেম সচল
-                    </span>
-                    <button className="flex items-center gap-1.5 text-xs font-bold bg-red-500 text-white
-                                       px-4 py-2 rounded-xl hover:bg-red-600 transition-colors shadow-sm">
-                        <FileText size={13} /> নতুন রিপোর্ট
-                    </button>
+                    
+
                 </div>
             </div>
 
@@ -499,9 +492,6 @@ function ReportsSection({ data }) {
         <div className="space-y-5">
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-black text-gray-800">রিপোর্ট ব্যবস্থাপনা</h2>
-                <button className="flex items-center gap-1.5 text-xs font-bold bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600">
-                    <FileText size={13} /> নতুন রিপোর্ট যোগ করুন
-                </button>
             </div>
 
             <div className="flex gap-2 overflow-x-auto pb-1">

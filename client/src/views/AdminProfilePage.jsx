@@ -37,10 +37,23 @@ function AdminInfoTab({ user, updateUser }) {
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
 
-    const handleChange = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
+    const [error, setError] = useState('');
+
+    const handleChange = e => {
+        setError('');
+        setForm(p => ({ ...p, [e.target.name]: e.target.value }));
+    };
 
     const handleSave = async (e) => {
         e.preventDefault();
+        setError('');
+
+        // Strict Validation
+        if (!form.name.trim() || !form.phone.trim() || !form.designation.trim() || !form.department.trim()) {
+            setError('অনুগ্রহ করে সকল তথ্য ফিল্ড পূরণ করুন। কোনো ঘর খালি রাখা যাবে না।');
+            return;
+        }
+
         setSaving(true);
         await new Promise(r => setTimeout(r, 800));
         updateUser({ ...form });
@@ -92,6 +105,12 @@ function AdminInfoTab({ user, updateUser }) {
                     </Field>
                 </div>
 
+                {error && (
+                    <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-[11px] font-black px-4 py-3 rounded-xl mb-4 uppercase tracking-wider animate-pulse">
+                        <AlertTriangle size={14} /> {error}
+                    </div>
+                )}
+
                 <button type="submit" disabled={saving}
                     className="flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600
                                text-white py-3 px-6 rounded-xl font-bold text-sm transition-all shadow-sm disabled:opacity-60">
@@ -121,9 +140,25 @@ function SecurityTab() {
     );
 
     const handleSave = async (e) => {
-        e.preventDefault(); setError('');
-        if (form.newPass !== form.confirm) { setError('নতুন পাসওয়ার্ড মিলছে না'); return; }
-        if (form.newPass.length < 8) { setError('পাসওয়ার্ড কমপক্ষে ৮ অক্ষর হতে হবে'); return; }
+        e.preventDefault();
+        setError('');
+
+        // Strict Validation
+        if (!form.current.trim() || !form.newPass.trim() || !form.confirm.trim()) {
+            setError('অনুগ্রহ করে সকল পাসওয়ার্ড ফিল্ড পূরণ করুন।');
+            return;
+        }
+
+        if (form.newPass !== form.confirm) {
+            setError('নতুন পাসওয়ার্ড এবং নিশ্চিত পাসওয়ার্ড মিলছে না।');
+            return;
+        }
+
+        if (form.newPass.length < 8) {
+            setError('পাসওয়ার্ড কমপক্ষে ৮ অক্ষর হতে হবে।');
+            return;
+        }
+
         setSaving(true);
         await new Promise(r => setTimeout(r, 900));
         setSaving(false); setSaved(true);
@@ -163,188 +198,16 @@ function SecurityTab() {
                 </button>
             </form>
 
-            {/* Active sessions */}
-            <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5">
-                <h3 className="font-bold text-gray-800 text-sm mb-4 flex items-center gap-2">
-                    <Shield size={14} className="text-red-500" /> সক্রিয় সেশন
-                </h3>
-                {[{ device: 'Chrome — Windows 11 (এই ডিভাইস)', time: 'এখন সক্রিয়', current: true },
-                { device: 'Firefox — Android', time: '২ দিন আগে', current: false }].map((s, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100 mb-2 last:mb-0">
-                        <div>
-                            <p className="text-xs font-semibold text-gray-700">{s.device}</p>
-                            <p className="text-[10px] text-gray-400 mt-0.5">{s.time}</p>
-                        </div>
-                        {s.current
-                            ? <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">বর্তমান</span>
-                            : <button className="text-[10px] text-red-500 font-semibold hover:underline">লগআউট</button>}
-                    </div>
-                ))}
-            </div>
-
-            {/* 2FA */}
-            <div className="mt-4 bg-white border border-gray-100 rounded-2xl p-5 flex items-center justify-between">
-                <div>
-                    <h3 className="font-bold text-gray-800 text-sm">দুই-ধাপ যাচাইকরণ (2FA)</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">OTP-ভিত্তিক অতিরিক্ত নিরাপত্তা</p>
-                </div>
-                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">শীঘ্রই</span>
-            </div>
         </div>
     );
 }
 
-/* ─── Tab: Permissions ─── */
-function PermissionsTab() {
-    const permissions = [
-        { label: 'রিপোর্ট যাচাই করুন', granted: true },
-        { label: 'রিপোর্ট মুছে ফেলুন', granted: true },
-        { label: 'ব্যবহারকারী পরিচালনা করুন', granted: true },
-        { label: 'অ্যাডমিন নিয়োগ করুন', granted: false },
-        { label: 'সিস্টেম সেটিংস পরিবর্তন করুন', granted: true },
-        { label: 'ব্যাকআপ ও এক্সপোর্ট', granted: true },
-        { label: 'AI ম্যাচিং নিয়ন্ত্রণ', granted: true },
-        { label: 'সুপার অ্যাডমিন অ্যাক্সেস', granted: false },
-    ];
 
-    return (
-        <div>
-            <h2 className="text-xl font-black text-gray-800 mb-1">অনুমতি</h2>
-            <p className="text-sm text-gray-400 mb-7">আপনার অ্যাডমিন অনুমতির তালিকা (শুধুমাত্র পড়ার জন্য)</p>
-
-            <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                {permissions.map((p, i) => (
-                    <div key={i} className="flex items-center justify-between px-5 py-3.5 border-b border-gray-50 last:border-0">
-                        <p className="text-sm font-semibold text-gray-700">{p.label}</p>
-                        {p.granted
-                            ? <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
-                                <CheckCircle size={10} /> অনুমোদিত
-                            </span>
-                            : <span className="text-[10px] font-bold text-gray-400 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-full">
-                                অনুমোদিত নয়
-                            </span>}
-                    </div>
-                ))}
-            </div>
-
-            <div className="mt-4 bg-blue-50 border border-blue-100 rounded-xl p-4 text-xs text-blue-600">
-                <HelpCircle size={13} className="inline mr-1.5" />
-                অনুমতি পরিবর্তন করতে সুপার অ্যাডমিনের সাথে যোগাযোগ করুন।
-            </div>
-        </div>
-    );
-}
-
-/* ─── Tab: Activity Log ─── */
-function ActivityLogTab() {
-    // TODO: replace with real API call, e.g.:
-    // useEffect(() => { apiClient.get('/admin/activity-log').then(r => setLogs(r.data)); }, []);
-    const [logs, setLogs] = useState([]);
-
-    const typeColor = {
-        verify: 'bg-emerald-500',
-        close: 'bg-amber-500',
-        warn: 'bg-red-500',
-        settings: 'bg-blue-500',
-        ai: 'bg-purple-500',
-        delete: 'bg-gray-400',
-    };
-
-    return (
-        <div>
-            <h2 className="text-xl font-black text-gray-800 mb-1">কার্যক্রম লগ</h2>
-            <p className="text-sm text-gray-400 mb-7">আপনার সাম্প্রতিক অ্যাডমিন কার্যক্রম</p>
-
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-                {logs.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-gray-300">
-                        <FileText size={32} className="mb-2" />
-                        <p className="text-sm font-semibold">কোনো কার্যক্রম লগ নেই</p>
-                    </div>
-                ) : (
-                    logs.map((log, i) => (
-                        <div key={i} className="flex items-center gap-4 px-5 py-3.5 border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
-                            <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${typeColor[log.type] ?? 'bg-gray-300'}`} />
-                            <div className="flex-1">
-                                <p className="text-sm text-gray-700 font-medium">{log.action}</p>
-                            </div>
-                            <div className="flex items-center gap-1 text-[10px] text-gray-400 flex-shrink-0">
-                                <Clock size={10} /> {log.time}
-                            </div>
-                            <ChevronRight size={12} className="text-gray-300" />
-                        </div>
-                    ))
-                )}
-            </div>
-        </div>
-    );
-}
-
-/* ─── Tab: System Settings ─── */
-function SystemSettingsTab() {
-    const [settings, setSettings] = useState({
-        maintenanceMode: false,
-        registrationOpen: true,
-        aiMatching: true,
-        publicSearch: true,
-        emailNotifications: true,
-        autoVerify: false,
-    });
-    const [saved, setSaved] = useState(false);
-
-    const toggle = key => setSettings(p => ({ ...p, [key]: !p[key] }));
-
-    const items = [
-        { key: 'maintenanceMode', label: 'মেইনটেন্যান্স মোড', desc: 'চালু করলে সাধারণ ব্যবহারকারীরা সাইট এক্সেস করতে পারবেন না', danger: true },
-        { key: 'registrationOpen', label: 'নিবন্ধন চালু', desc: 'নতুন ব্যবহারকারী নিবন্ধন করতে পারবেন কিনা' },
-        { key: 'aiMatching', label: 'AI ম্যাচিং সক্রিয়', desc: 'ফেস রিকগনিশন ভিত্তিক স্বয়ংক্রিয় ম্যাচিং' },
-        { key: 'publicSearch', label: 'পাবলিক সার্চ', desc: 'লগইন ছাড়াই রিপোর্ট খুঁজে দেখা যাবে' },
-        { key: 'emailNotifications', label: 'ইমেইল বিজ্ঞপ্তি', desc: 'সিস্টেম ইভেন্টের জন্য ইমেইল পাঠানো' },
-        { key: 'autoVerify', label: 'স্বয়ংক্রিয় যাচাইকরণ', desc: 'নতুন রিপোর্ট স্বয়ংক্রিয়ভাবে যাচাইকৃত হবে', danger: true },
-    ];
-
-    return (
-        <div>
-            <h2 className="text-xl font-black text-gray-800 mb-1">সিস্টেম সেটিংস</h2>
-            <p className="text-sm text-gray-400 mb-7">প্ল্যাটফর্মের বৈশ্বিক পরিচালনা নিয়ন্ত্রণ করুন</p>
-
-            <div className="space-y-3">
-                {items.map(item => (
-                    <div key={item.key}
-                        className={`flex items-center justify-between p-5 bg-white rounded-2xl border shadow-sm
-                                    ${item.danger ? 'border-red-100' : 'border-gray-100'}`}>
-                        <div className="flex-1 pr-4">
-                            <p className={`text-sm font-bold ${item.danger ? 'text-red-700' : 'text-gray-800'}`}>{item.label}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">{item.desc}</p>
-                        </div>
-                        <button onClick={() => toggle(item.key)} type="button"
-                            className={`relative w-12 h-6 rounded-full transition-all duration-300 flex-shrink-0
-                                        ${settings[item.key]
-                                    ? (item.danger ? 'bg-red-500' : 'bg-red-500')
-                                    : 'bg-gray-200'}`}>
-                            <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow
-                                              transition-transform duration-300 ${settings[item.key] ? 'translate-x-6' : ''}`} />
-                        </button>
-                    </div>
-                ))}
-            </div>
-
-            <button onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 3000); }}
-                className="mt-6 flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white
-                           py-3 px-6 rounded-xl font-bold text-sm transition-all shadow-sm">
-                {saved ? <><CheckCircle size={15} /> সংরক্ষিত হয়েছে!</> : <><Save size={15} /> সেটিংস সংরক্ষণ করুন</>}
-            </button>
-        </div>
-    );
-}
 
 /* ─── MAIN PAGE ─── */
 const TABS = [
     { id: 'info', label: 'অ্যাডমিন তথ্য', icon: User, Component: AdminInfoTab },
     { id: 'security', label: 'নিরাপত্তা', icon: Shield, Component: SecurityTab },
-    { id: 'perms', label: 'অনুমতি', icon: Key, Component: PermissionsTab },
-    { id: 'logs', label: 'কার্যক্রম লগ', icon: FileText, Component: ActivityLogTab },
-    { id: 'system', label: 'সিস্টেম সেটিংস', icon: Settings, Component: SystemSettingsTab },
 ];
 
 export default function AdminProfilePage() {
@@ -352,6 +215,7 @@ export default function AdminProfilePage() {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
 
     const rawTab = searchParams.get('tab');
     const activeTab = TABS.find(t => t.id === rawTab) ? rawTab : 'info';
@@ -360,16 +224,28 @@ export default function AdminProfilePage() {
     const { Component } = TABS.find(t => t.id === activeTab) || TABS[0];
 
     return (
-        <div className="flex h-screen bg-gray-50 overflow-hidden">
-            {/* Sidebar */}
+        <div className="flex h-screen bg-gray-50 overflow-hidden font-inter">
+            {/* Sidebar Desktop */}
             <div className="hidden lg:flex">
-                <AdminSidebar active="settings" onNav={id => navigate(`/admin/dashboard#${id}`)}
+                <AdminSidebar active="settings" onNav={id => navigate(`/admin/dashboard?tab=${id}`)}
                     collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(p => !p)} />
             </div>
 
+            {/* Sidebar Mobile */}
+            {mobileOpen && (
+                <div className="lg:hidden fixed inset-0 z-50 flex">
+                    <div className="flex-shrink-0">
+                        <AdminSidebar active="settings"
+                            onNav={id => { navigate(`/admin/dashboard?tab=${id}`); setMobileOpen(false); }}
+                            collapsed={false} onToggle={() => setMobileOpen(false)} />
+                    </div>
+                    <div className="flex-1 bg-black/50" onClick={() => setMobileOpen(false)} />
+                </div>
+            )}
+
             {/* Main */}
             <div className="flex-1 flex flex-col overflow-hidden">
-                <AdminNavbar breadcrumb="প্রোফাইল সেটিংস" onMobileMenu={() => { }} />
+                <AdminNavbar breadcrumb="প্রোফাইল সেটিংস" onMobileMenu={() => setMobileOpen(true)} />
 
                 <main className="flex-1 overflow-y-auto p-4 lg:p-6">
                     <div className="max-w-5xl mx-auto">

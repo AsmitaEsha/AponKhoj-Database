@@ -62,6 +62,7 @@ function PersonalInfoTab({ user, updateUser }) {
         phone: user?.phone || '',
         location: user?.location || '',
     });
+    const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [avatar, setAvatar] = useState(user?.avatarUrl || null);
@@ -78,8 +79,21 @@ function PersonalInfoTab({ user, updateUser }) {
 
     const handleSave = async (e) => {
         e.preventDefault();
+        const newErrors = {};
+        if (!form.firstName.trim()) newErrors.firstName = 'প্রথম নাম আবশ্যক';
+        if (!form.lastName.trim()) newErrors.lastName = 'শেষ নাম আবশ্যক';
+        if (!form.phone.trim()) newErrors.phone = 'ফোন নম্বর আবশ্যক';
+        if (!form.location) newErrors.location = 'জেলা নির্বাচন করুন';
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
+        setErrors({});
         setSaving(true);
-        await new Promise(r => setTimeout(r, 900)); // replace with real API call
+        // Simulate API call
+        await new Promise(r => setTimeout(r, 1200)); 
         updateUser({ ...form, avatarUrl: avatar });
         setSaving(false);
         setSaved(true);
@@ -115,13 +129,13 @@ function PersonalInfoTab({ user, updateUser }) {
             </div>
 
             <form onSubmit={handleSave} className="space-y-5">
-                <Field label="প্রথম নাম" icon={User}>
-                    <input className={inputCls()} name="firstName" value={form.firstName}
+                <Field label="প্রথম নাম" icon={User} error={errors.firstName}>
+                    <input className={inputCls(true, !!errors.firstName)} name="firstName" value={form.firstName}
                         onChange={handleChange} placeholder="আপনার প্রথম নাম" />
                 </Field>
 
-                <Field label="শেষ নাম" icon={User}>
-                    <input className={inputCls()} name="lastName" value={form.lastName}
+                <Field label="শেষ নাম" icon={User} error={errors.lastName}>
+                    <input className={inputCls(true, !!errors.lastName)} name="lastName" value={form.lastName}
                         onChange={handleChange} placeholder="আপনার শেষ নাম" />
                 </Field>
 
@@ -130,13 +144,13 @@ function PersonalInfoTab({ user, updateUser }) {
                         value={user?.email || ''} readOnly />
                 </Field>
 
-                <Field label="ফোন নম্বর" icon={Phone}>
-                    <input className={inputCls()} name="phone" value={form.phone}
+                <Field label="ফোন নম্বর" icon={Phone} error={errors.phone}>
+                    <input className={inputCls(true, !!errors.phone)} name="phone" value={form.phone}
                         onChange={handleChange} placeholder="01XXXXXXXXX" type="tel" />
                 </Field>
 
-                <Field label="জেলা / অবস্থান" icon={MapPin}>
-                    <select className={inputCls()} name="location" value={form.location} onChange={handleChange}>
+                <Field label="জেলা / অবস্থান" icon={MapPin} error={errors.location}>
+                    <select className={inputCls(true, !!errors.location)} name="location" value={form.location} onChange={handleChange}>
                         <option value="">জেলা নির্বাচন করুন</option>
                         {['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'].map(d =>
                             <option key={d} value={d}>{d}</option>
@@ -241,59 +255,21 @@ function PasswordTab() {
 /* ═══════════════════════════════════════════
    TAB: Notifications
 ═══════════════════════════════════════════ */
-function NotificationsTab() {
-    const [prefs, setPrefs] = useState({
-        emailAlerts: true,
-        smsAlerts: false,
-        aiMatchAlert: true,
-        weeklyDigest: true,
-        newsUpdates: false,
-    });
-    const [saved, setSaved] = useState(false);
-
-    const toggle = key => setPrefs(p => ({ ...p, [key]: !p[key] }));
-
-    const Toggle = ({ k, label, desc }) => (
-        <div className="flex items-center justify-between py-4 border-b border-gray-50 last:border-0">
-            <div className="flex-1 pr-4">
-                <p className="text-sm font-semibold text-gray-800">{label}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
-            </div>
-            <button onClick={() => toggle(k)} type="button"
-                className={`relative w-11 h-6 rounded-full transition-all duration-300
-                            ${prefs[k] ? 'bg-primary' : 'bg-gray-200'}`}>
-                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow
-                                  transition-transform duration-300 ${prefs[k] ? 'translate-x-5' : ''}`} />
-            </button>
-        </div>
-    );
-
-    return (
-        <div>
-            <h2 className="text-xl font-black text-gray-800 mb-1">বিজ্ঞপ্তি সেটিংস</h2>
-            <p className="text-sm text-gray-400 mb-7">কোন ধরনের বিজ্ঞপ্তি পেতে চান তা নিয়ন্ত্রণ করুন</p>
-
-            <div className="bg-white border border-gray-100 rounded-2xl px-5 shadow-sm mb-6">
-                <Toggle k="emailAlerts" label="ইমেইল আলার্ট" desc="নতুন নিখোঁজ রিপোর্ট বা ম্যাচ পাওয়া গেলে ইমেইল পাঠানো হবে" />
-                <Toggle k="smsAlerts" label="SMS আলার্ট" desc="আপনার এলাকায় নিখোঁজ ব্যক্তির রিপোর্ট এলে SMS পাঠানো হবে" />
-                <Toggle k="aiMatchAlert" label="AI ম্যাচ বিজ্ঞপ্তি" desc="AI ফেস রিকগনিশন কোনো ম্যাচ খুঁজে পেলে সাথে সাথে জানানো হবে" />
-                <Toggle k="weeklyDigest" label="সাপ্তাহিক ডাইজেস্ট" desc="প্রতি সপ্তাহে নতুন রিপোর্টের সারসংক্ষেপ" />
-                <Toggle k="newsUpdates" label="প্ল্যাটফর্ম আপডেট" desc="আপনখোঁজ প্ল্যাটফর্মের নতুন ফিচার সম্পর্কে জানুন" />
-            </div>
-
-            <button onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 3000); }}
-                className="flex items-center justify-center gap-2 w-full bg-primary hover:bg-primary-dark
-                           text-white py-3 rounded-xl font-bold text-sm transition-all shadow-sm">
-                {saved ? <><CheckCircle size={16} /> সংরক্ষিত হয়েছে!</> : <><Save size={16} /> পছন্দ সংরক্ষণ করুন</>}
-            </button>
-        </div>
-    );
-}
 
 /* ═══════════════════════════════════════════
    TAB: Security
 ═══════════════════════════════════════════ */
 function SecurityTab() {
+    const { logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleDeleteAccount = () => {
+        if (window.confirm('আপনি কি নিশ্চিত যে আপনি আপনার অ্যাকাউন্টটি মুছে ফেলতে চান? এই কাজটি পূর্বাবস্থায় ফেরানো সম্ভব নয়।')) {
+            logout();
+            navigate('/');
+        }
+    };
+
     return (
         <div>
             <h2 className="text-xl font-black text-gray-800 mb-1">নিরাপত্তা</h2>
@@ -339,7 +315,9 @@ function SecurityTab() {
                         <Trash2 size={15} /> অ্যাকাউন্ট মুছে ফেলুন
                     </h3>
                     <p className="text-xs text-red-500 mb-3">এই কাজটি পূর্বাবস্থায় ফেরানো সম্ভব নয়। আপনার সমস্ত তথ্য স্থায়ীভাবে মুছে যাবে।</p>
-                    <button className="text-xs font-bold text-red-600 border border-red-300 hover:bg-red-100
+                    <button 
+                        onClick={handleDeleteAccount}
+                        className="text-xs font-bold text-red-600 border border-red-300 hover:bg-red-100
                                        px-4 py-2 rounded-lg transition-colors">
                         অ্যাকাউন্ট মুছুন
                     </button>
@@ -426,7 +404,6 @@ function HelpTab() {
 const TABS = [
     { id: 'profile', label: 'ব্যক্তিগত তথ্য', icon: User, Component: PersonalInfoTab },
     { id: 'password', label: 'পাসওয়ার্ড', icon: Key, Component: PasswordTab },
-    { id: 'notifications', label: 'বিজ্ঞপ্তি', icon: Bell, Component: NotificationsTab },
     { id: 'reports', label: 'আমার রিপোর্ট', icon: FileText, Component: MyReportsTab },
     { id: 'security', label: 'নিরাপত্তা', icon: Shield, Component: SecurityTab },
     { id: 'help', label: 'সহায়তা', icon: HelpCircle, Component: HelpTab },

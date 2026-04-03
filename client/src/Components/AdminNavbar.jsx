@@ -214,34 +214,6 @@ export default function AdminNavbar({ breadcrumb = 'ড্যাশবোর্�
                     <Search size={16} />
                 </button>
 
-                {/* Quick actions */}
-                <div ref={quickRef} className="relative">
-                    <button onClick={() => { setQuickOpen(p => !p); setNotifOpen(false); }}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold
-                                    transition-all ${quickOpen
-                                ? 'bg-red-500 text-white shadow-sm'
-                                : 'text-gray-500 hover:bg-gray-100'}`}>
-                        <Plus size={14} />
-                        <span className="hidden sm:block">দ্রুত অ্যাকশন</span>
-                        <ChevronDown size={11} className={`transition-transform ${quickOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {quickOpen && (
-                        <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-xl
-                                        border border-gray-100 z-50 overflow-hidden py-1">
-                            {QUICK_ACTIONS.map((a, i) => (
-                                <Link key={i} to={a.to} onClick={() => setQuickOpen(false)}>
-                                    <button className="flex items-center gap-3 w-full px-4 py-2.5 text-xs
-                                                       font-medium text-gray-700 hover:bg-gray-50 hover:text-red-500 transition-colors text-left">
-                                        <a.icon size={14} className="text-gray-400 flex-shrink-0" />
-                                        {a.label}
-                                    </button>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
                 {/* Notification bell */}
                 <div ref={notifRef} className="relative">
                     <button onClick={() => { setNotifOpen(p => !p); setQuickOpen(false); }}
@@ -263,12 +235,6 @@ export default function AdminNavbar({ breadcrumb = 'ড্যাশবোর্�
                             onMarkAll={markAllRead}
                             onClose={() => setNotifOpen(false)} />
                     )}
-                </div>
-
-                {/* System status indicator */}
-                <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-100">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] font-bold text-emerald-600">সচল</span>
                 </div>
             </div>
         </header>

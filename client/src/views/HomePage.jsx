@@ -1,5 +1,6 @@
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Search, ArrowRight, Users, MapPin, CheckCircle, AlertTriangle, Heart, Zap } from 'lucide-react';
+import { useAuth } from '../helpers/AuthContext';
 
 const DIVISIONS = ['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
 
@@ -9,20 +10,18 @@ const STEPS = [
     { icon: Heart, label: 'পুনর্মিলন', desc: 'পরিবার ও প্রিয়জন একত্রিত হন', color: 'bg-primary/10 text-primary' },
 ];
 
-const avatar = (seed, gender, type = 'missing') => {
-    if (!seed) return `https://api.dicebear.com/7.x/shapes/png?seed=unknown&size=200&backgroundColor=f3f4f6`;
-    const style = gender === 'female' ? 'lorelei' : 'adventurer';
-    const bg = type === 'missing' ? 'ffe4e6' : 'd4ede9'; 
-    return `https://api.dicebear.com/7.x/${style}/png?seed=${encodeURIComponent(seed)}&size=300&backgroundColor=${bg}`;
-};
-
-const RECENT = [
-    { id: 1, name: 'রহিম উদ্দিন', age: 45, gender: 'male', division: 'ঢাকা', district: 'মিরপুর, ঢাকা', date: '২ দিন আগে', status: 'missing', seed: 'rahim' },
-    { id: 2, name: 'সুমাইয়া বেগম', age: 28, gender: 'female', division: 'চট্টগ্রাম', district: 'হালিশহর, চট্টগ্রাম', date: '৩ দিন আগে', status: 'found', seed: 'sumaiya' },
-    { id: 3, name: 'আনোয়ার হোসেন', age: 60, gender: 'male', division: 'খুলনা', district: 'কয়রা, খুলনা', date: '৫ দিন আগে', status: 'missing', seed: 'anwar' },
-];
-
 const HomePage = () => {
+    const { isAuthenticated } = useAuth();
+    const navigate = useNavigate();
+
+    const handleReportAction = (path) => {
+        if (!isAuthenticated) {
+            navigate(`/login?redirect=${path}`);
+        } else {
+            navigate(path);
+        }
+    };
+
     return (
         <div className="bg-background min-h-screen overflow-x-hidden">
 
@@ -43,16 +42,18 @@ const HomePage = () => {
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 w-full px-4 sm:px-0">
-                            <Link to="/report/missing"
+                            <button 
+                                onClick={() => handleReportAction('/report-missing')}
                                 className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#ff5a2c] hover:bg-[#e0451b] text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-bold text-sm shadow-xl shadow-[#ff5a2c]/20 transition-all"
                             >
                                 <Search size={18} /> নিখোঁজ রিপোর্ট করুন
-                            </Link>
-                            <Link to="/report/found"
+                            </button>
+                            <button 
+                                onClick={() => handleReportAction('/report-found')}
                                 className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-bold text-sm transition-all shadow-lg"
                             >
                                 <Users size={18} /> উদ্ধার তথ্য যোগ করুন
-                            </Link>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -112,7 +113,7 @@ const HomePage = () => {
                             </select>
                         </div>
                         <div className="w-full lg:w-auto mt-2 lg:mt-0">
-                            <Link to="/search"
+                            <Link to="/search-page"
                                 className="w-full lg:w-auto flex justify-center items-center gap-2 bg-primary hover:bg-primary-dark text-white px-7 py-3 lg:py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-colors shadow-md"
                             >
                                 <Search size={16} /> অনুসন্ধান
@@ -151,42 +152,14 @@ const HomePage = () => {
                         <h2 className="text-2xl font-black text-gray-800">সাম্প্রতিক রিপোর্ট</h2>
                         <p className="text-sm text-gray-400 mt-0.5">সর্বশেষ জমা দেওয়া রিপোর্ট</p>
                     </div>
-                    <Link to="/search" className="flex items-center gap-1 text-sm text-primary font-medium hover:underline">
+                    <Link to="/search-page" className="flex items-center gap-1 text-sm text-primary font-medium hover:underline">
                         সব দেখুন <ArrowRight size={14} />
                     </Link>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                    {RECENT.map(r => (
-                        <div key={r.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow group flex flex-col h-full">
-                            <div className="relative h-48 overflow-hidden bg-gray-50 flex items-center justify-center">
-                                <img src={avatar(r.seed, r.gender, r.status)} alt={r.name} className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-300" />
-                                <span className={`absolute top-2 left-2 text-[10px] font-bold px-2.5 py-1 rounded-full shadow ${r.status === 'missing' ? 'bg-[#ff5a2c] text-white' : 'bg-accent-teal text-white'}`}>
-                                    {r.status === 'missing' ? 'নিখোঁজ' : 'পাওয়া গেছে'}
-                                </span>
-                            </div>
-                            <div className="p-4 flex flex-col flex-1">
-                                <div className="flex items-baseline gap-2 mb-2">
-                                    <h3 className="font-black text-gray-800 text-base">{r.name}</h3>
-                                    <span className="text-xs text-gray-400">~{r.age} বছর</span>
-                                </div>
-                                <div className="space-y-1.5 text-xs text-gray-500 mb-4 flex-1">
-                                    <div className="flex items-center gap-1.5">
-                                        <MapPin size={11} className="text-[#1B4332] flex-shrink-0" />
-                                        <span>{r.district}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="w-[11px] h-[11px] rounded flex items-center justify-center bg-gray-100 flex-shrink-0">
-                                            <span className="text-[8px] font-bold text-gray-400">{r.status === 'missing' ? 'T' : 'D'}</span>
-                                        </div>
-                                        <span className="text-gray-400">{r.date}</span>
-                                    </div>
-                                </div>
-                                <Link to={`/search/${r.id}`} className="flex items-center justify-center gap-1 w-full border border-gray-200 text-gray-600 text-xs py-2 rounded-xl hover:border-primary hover:text-primary transition-colors font-medium">
-                                    বিস্তারিত দেখুন
-                                </Link>
-                            </div>
-                        </div>
-                    ))}
+                
+                <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
+                    <div className="text-4xl mb-3">🔍</div>
+                    <p className="text-gray-500 font-medium">কোনো সাম্প্রতিক রিপোর্ট নেই</p>
                 </div>
             </section>
 
@@ -202,7 +175,7 @@ const HomePage = () => {
                         <Link to="/register" className="w-full sm:w-auto bg-secondary text-white px-7 py-3 rounded-xl font-bold text-sm hover:bg-secondary-dark transition-colors shadow-lg">
                             রেজিস্ট্রেশন করুন
                         </Link>
-                        <Link to="/search" className="w-full sm:w-auto bg-white/10 border border-white/20 text-white px-7 py-3 rounded-xl font-bold text-sm hover:bg-white/20 transition-colors">
+                        <Link to="/search-page" className="w-full sm:w-auto bg-white/10 border border-white/20 text-white px-7 py-3 rounded-xl font-bold text-sm hover:bg-white/20 transition-colors">
                             তালিকা দেখুন
                         </Link>
                     </div>
