@@ -65,7 +65,12 @@ export default function UserDashboardPage() {
         const timer = setTimeout(() => {
             setReports([]);
             setNotifications([]);
-            setStats(null);
+            setStats({
+                totalReports: 0,
+                activeAlerts: 0,
+                successCount: 0,
+                aiChecks: 0
+            });
             setLoading(false);
         }, 600);
         return () => clearTimeout(timer);
@@ -204,9 +209,9 @@ export default function UserDashboardPage() {
                         <div className="grid grid-cols-2 gap-3">
                             {[
                                 { to: '/search', label: 'তালিকায় অনুসন্ধান', desc: 'নিখোঁজ তালিকা দেখুন', icon: Search, bg: 'bg-primary/5 border-primary/20', text: 'text-primary' },
-                                { to: '/alerts', label: 'আলার্ট সাবস্ক্রাইব', desc: 'এলাকা-ভিত্তিক আলার্ট', icon: Bell, bg: 'bg-yellow-50 border-yellow-200', text: 'text-yellow-600' },
                                 { to: '/ai-match', label: 'AI ম্যাচ দেখুন', desc: 'মুখ শনাক্তকরণ ফলাফল', icon: Zap, bg: 'bg-purple-50 border-purple-200', text: 'text-purple-600' },
                                 { to: '/profile', label: 'প্রোফাইল সম্পাদনা', desc: 'তথ্য আপডেট করুন', icon: UserCircle2, bg: 'bg-gray-50 border-gray-200', text: 'text-gray-600' },
+                                { to: '/help', label: 'সহায়তা কেন্দ্র', desc: 'প্রশ্ন ও সাপোর্ট', icon: Settings, bg: 'bg-secondary/5 border-secondary/20', text: 'text-secondary' },
                             ].map(a => (
                                 <Link key={a.to} to={a.to} className={`flex items-start gap-3 border rounded-2xl p-4 hover:shadow-sm transition-all ${a.bg}`}>
                                     <a.icon size={18} className={`mt-0.5 flex-shrink-0 ${a.text}`} />
@@ -223,34 +228,38 @@ export default function UserDashboardPage() {
                     <div className="space-y-5">
 
                         {/* Notifications */}
-                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-                                <h2 className="font-bold text-gray-800">বিজ্ঞপ্তি</h2>
-                                {notifications.filter(n => n.urgent).length > 0 && (
-                                    <span className="bg-secondary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                                        {notifications.filter(n => n.urgent).length}
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-5">
+                            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50 bg-gray-50/50">
+                                <h2 className="font-bold text-gray-800 text-sm flex items-center gap-2">
+                                    <Bell size={16} className="text-primary" /> বিজ্ঞপ্তি ও আপডেট
+                                </h2>
+                                {notifications.length > 0 && (
+                                    <span className="bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                        {notifications.length}
                                     </span>
                                 )}
                             </div>
-                            {notifications.length === 0 ? (
-                                <div className="text-center py-8 px-4">
-                                    <Bell size={22} className="text-gray-200 mx-auto mb-2" />
-                                    <p className="text-xs text-gray-400">কোনো বিজ্ঞপ্তি নেই</p>
-                                </div>
-                            ) : (
-                                <div className="divide-y divide-gray-50">
-                                    {notifications.map((n, i) => (
-                                        <div key={n.id || i} className={`flex items-start gap-3 px-4 py-3 ${n.urgent ? 'bg-purple-50/40' : ''}`}>
-                                            <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${n.urgent ? 'bg-purple-500' : 'bg-gray-200'}`} />
-                                            <div className="flex-1">
-                                                <p className="text-xs text-gray-700 leading-relaxed">{n.text}</p>
-                                                <p className="text-[10px] text-gray-400 mt-0.5">{n.time}</p>
+                            <div className="divide-y divide-gray-50 max-h-[300px] overflow-y-auto scrollbar-none">
+                                {notifications.length === 0 ? (
+                                    <div className="text-center py-8 px-4 text-gray-400 text-xs">
+                                        কোনো নতুন বিজ্ঞপ্তি নেই
+                                    </div>
+                                ) : (
+                                    notifications.map(n => (
+                                        <div key={n.id} className={`flex items-start gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors group ${n.urgent ? 'bg-primary/[0.02]' : ''}`}>
+                                            <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${n.urgent ? 'bg-primary shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-gray-200'}`} />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs text-gray-700 leading-relaxed font-medium">{n.text}</p>
+                                                <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                                                    <Clock size={10} /> {n.time}
+                                                </p>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
+                                    ))
+                                )}
+                            </div>
                         </div>
+
 
                         {/* Profile Card */}
                         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -278,7 +287,7 @@ export default function UserDashboardPage() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="text-gray-300 text-[11px]">📅</span>
-                                    <span>যোগদান: {user?.joinDate || '—'}</span>
+                                    <span>যোগদান: {user?.joinDate || '৪ এপ্রিল ২০২৬'}</span>
                                 </div>
                             </div>
                             <Link to="/profile" className="flex items-center justify-center gap-2 w-full border border-gray-200 text-gray-600 text-xs py-2 rounded-xl hover:border-primary hover:text-primary transition-colors font-medium">

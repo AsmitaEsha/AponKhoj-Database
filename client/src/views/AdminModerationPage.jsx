@@ -88,9 +88,9 @@ const STATUS_STYLE = {
 function StatsStrip({ stats }) {
     const cards = [
         { label: 'অপেক্ষমাণ পর্যালোচনা', value: stats.pendingReviews, icon: Inbox, color: 'bg-amber-50 text-amber-500 border-amber-100' },
-        { label: 'উচ্চ অগ্রাধিকার', value: stats.highPriority, icon: AlertTriangle, color: 'bg-red-50 text-red-500 border-red-100' },
+      
         { label: 'আজকে সমাধান করা হয়েছে', value: stats.resolvedToday, icon: CheckCircle, color: 'bg-emerald-50 text-emerald-500 border-emerald-100' },
-        { label: 'গড় প্রতিক্রিয়া সময়', value: stats.avgResponseTime, icon: Clock, color: 'bg-blue-50 text-blue-500 border-blue-100' },
+       
     ];
 
     return (
@@ -124,33 +124,6 @@ function FilterBar({ search, setSearch, priority, setPriority, status, setStatus
                     placeholder="আইডি, নাম বা বিবরণ খুঁজুন..."
                     className="w-full pl-9 pr-4 py-2 text-xs border border-gray-200 rounded-xl
                                focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
-            </div>
-
-            {/* Priority filter */}
-            <div className="relative">
-                <Filter size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <select value={priority} onChange={e => setPriority(e.target.value)}
-                    className="pl-7 pr-8 py-2 text-xs border border-gray-200 rounded-xl bg-white
-                               focus:outline-none focus:ring-2 focus:ring-red-200 appearance-none cursor-pointer">
-                    <option value="">সব অগ্রাধিকার</option>
-                    <option value="high">উচ্চ</option>
-                    <option value="medium">মধ্যম</option>
-                    <option value="low">নিম্ন</option>
-                </select>
-                <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            </div>
-
-            {/* Status filter */}
-            <div className="relative">
-                <select value={status} onChange={e => setStatus(e.target.value)}
-                    className="pl-3 pr-8 py-2 text-xs border border-gray-200 rounded-xl bg-white
-                               focus:outline-none focus:ring-2 focus:ring-red-200 appearance-none cursor-pointer">
-                    <option value="">সব স্ট্যাটাস</option>
-                    <option value="pending">অপেক্ষমাণ</option>
-                    <option value="under_review">পর্যালোচনাধীন</option>
-                    <option value="escalated">এস্কেলেটেড</option>
-                </select>
-                <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
         </div>
     );
@@ -346,8 +319,7 @@ function QueueTable({ items, onReview, loading, emptyLabel }) {
 ══════════════════════════════════════════ */
 const TABS = [
     { id: 'reports', label: 'অপেক্ষমাণ রিপোর্ট', icon: FileText, emptyLabel: 'কোনো অপেক্ষমাণ রিপোর্ট নেই' },
-    { id: 'users', label: 'ফ্ল্যাগড ব্যবহারকারী', icon: User, emptyLabel: 'কোনো ফ্ল্যাগড ব্যবহারকারী নেই' },
-    { id: 'appeals', label: 'আপিল', icon: MessageSquare, emptyLabel: 'কোনো আপিল নেই' },
+    { id: 'users', label: 'অনুমোদিত রিপোর্ট', icon: User, emptyLabel: 'কোনো অনুমোদিত রিপোর্ট নেই' },
 ];
 
 export default function AdminModerationPage() {

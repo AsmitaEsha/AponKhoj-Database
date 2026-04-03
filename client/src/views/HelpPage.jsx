@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-    Search, Phone, Mail, FileText, Users, Shield,
-    ChevronDown, ChevronUp, AlertTriangle, BookOpen,
-    Zap, CheckCircle, ArrowRight
+    Phone, Mail, BookOpen,
+    ChevronDown, ChevronUp, AlertTriangle, ChevronRight,
+    CheckCircle, ArrowRight, FileText, Users, Search, Zap, Shield, X
 } from 'lucide-react';
 
 const FAQS = [
@@ -42,19 +42,86 @@ const FAQS = [
 ];
 
 const GUIDES = [
-    { icon: FileText, title: 'নিখোঁজ রিপোর্ট গাইড', desc: 'সঠিকভাবে রিপোর্ট জমা দেওয়ার ধাপগুলো', link: '/report-missing', color: 'text-secondary bg-secondary/10' },
-    { icon: Search, title: 'অনুসন্ধান গাইড', desc: 'দ্রুত ও কার্যকরভাবে খোঁজার কৌশল', link: '/search', color: 'text-primary bg-primary/10' },
-    { icon: Users, title: 'NGO ও প্রতিষ্ঠান নির্দেশিকা', desc: 'প্রাতিষ্ঠানিক অ্যাকাউন্ট ও উদ্ধার তথ্য যোগ', link: '/report-found', color: 'text-accent-teal bg-accent-teal/10' },
-    { icon: Shield, title: 'গোপনীয়তা নীতি', desc: 'আপনার তথ্য কীভাবে সুরক্ষিত রাখা হয়', link: '/privacy', color: 'text-purple-600 bg-purple-100' },
-    { icon: Zap, title: 'AI ম্যাচিং ব্যাখ্যা', desc: 'ফেস রিকগনিশন প্রযুক্তির কার্যপদ্ধতি', link: '/ai-match', color: 'text-orange-500 bg-orange-100' },
-    { icon: BookOpen, title: 'আইনি সহায়তা', desc: 'নিখোঁজ মামলায় পুলিশি পদক্ষেপ ও আইনি অধিকার', link: '/legal', color: 'text-gray-600 bg-gray-100' },
-];
-
-const QUICK_ACTIONS = [
-    { icon: FileText, label: 'নিখোঁজ রিপোর্ট করুন', link: '/report-missing', color: 'bg-primary text-white' },
-    { icon: Users, label: 'উদ্ধার তথ্য দিন', link: '/report-found', color: 'bg-secondary text-white' },
-    { icon: Search, label: 'অনুসন্ধান করুন', link: '/search-page', color: 'bg-accent-teal text-white' },
-    { icon: Phone, label: 'জরুরি যোগাযোগ', link: '/contact', color: 'bg-accent-red text-white' },
+    { 
+        icon: FileText, 
+        title: 'নিখোঁজ রিপোর্ট গাইড', 
+        desc: 'সঠিকভাবে রিপোর্ট জমা দেওয়ার ধাপগুলো', 
+        color: 'text-red-500 bg-red-50',
+        headerBg: 'bg-red-500',
+        details: [
+            'আপনার ব্রাউজারের "নিখোঁজ রিপোর্ট করুন" বাটনে ক্লিক করুন।',
+            'ব্যক্তির সঠিক নাম, বয়স এবং লিঙ্গ নির্ধারণ করুন।',
+            'শেষ দেখার স্থান ও সময় নির্দিষ্ট করুন।',
+            'পরিবারের সাথে যোগাযোগের নম্বরটি নিশ্চিত করুন।',
+            'অন্তত একটি স্পষ্ট ছবি আপলোড করুন যা AI-এর জন্য সহায়ক হবে।',
+            'সাবমিট করুন, ২৪ ঘণ্টার মধ্যে যাচাই শেষে রিপোর্টটি লাইভ হবে।'
+        ]
+    },
+    { 
+        icon: Search, 
+        title: 'অনুসন্ধান গাইড', 
+        desc: 'দ্রুত ও কার্যকরভাবে খুঁজার কৌশল', 
+        color: 'text-emerald-600 bg-emerald-50',
+        headerBg: 'bg-emerald-600',
+        details: [
+            'সার্চ ফিল্টারের মাধ্যমে বয়স ও জেলা নির্বাচন করুন।',
+            'ছবি থাকলে AI ফেস ম্যাচিং ফিচার ব্যবহার করে খুঁজুন।',
+            ' "উদ্ধার তালিকা" নিয়মিত চেক করুন।',
+            'কোনো তথ্য মিললে সরাসরি রিপোর্টার বা পুলিশকে জানান।'
+        ]
+    },
+    { 
+        icon: Users, 
+        title: 'NGO ও প্রতিষ্ঠান নির্দেশিকা', 
+        desc: 'প্রাতিষ্ঠানিক অ্যাকাউন্ট ও উদ্ধার তথ্য যোগ', 
+        color: 'text-teal-600 bg-teal-50',
+        headerBg: 'bg-teal-600',
+        details: [
+            'এনজিও বা হাসপাতালের জন্য অর্গানাইজেশন অ্যাকাউন্ট খুলুন।',
+            'পরিচয়পত্র ও নথিপত্র সংযুক্ত করে ভেরিফিকেশন আবেদন করুন।',
+            'উদ্ধার হওয়া অজ্ঞাত ব্যক্তিদের তথ্য দ্রুত আপলোড করুন।',
+            'ডাটাবেজ এক্সেস করার জন্য বিশেষ অনুমতি নিন।'
+        ]
+    },
+    { 
+        icon: Shield, 
+        title: 'গোপনীয়তা নীতি', 
+        desc: 'আপনার তথ্য কীভাবে সুরক্ষিত রাখা হয়', 
+        color: 'text-purple-600 bg-purple-50',
+        headerBg: 'bg-purple-600',
+        details: [
+            'আপনার সকল তথ্য এনক্রিপ্টেড সার্ভারে সুরক্ষিত।',
+            'ফেস রিকগনিশন ডাটা শুধুমাত্র ম্যাচিং ছাড়া অন্য কাজে ব্যবহার হয় না।',
+            'পুলিশ বা আইনি সংস্থা ছাড়া তৃতীয় পক্ষকে তথ্য দেওয়া হয় না।',
+            'আপনি চাইলে যেকোনো সময় আপনার রিপোর্ট মুছে ফেলতে পারেন।'
+        ]
+    },
+    { 
+        icon: Zap, 
+        title: 'AI ম্যাচিং ব্যাখ্যা', 
+        desc: 'ফেস রিকগনিশন প্রযুক্তির কার্যপদ্ধতি', 
+        color: 'text-amber-500 bg-amber-50',
+        headerBg: 'bg-amber-500',
+        details: [
+            'সিস্টেম আপনার আপলোড করা ছবির বায়োমেট্রিক ডাটা বিশ্লেষণ করে।',
+            'এটি ডাটাবেজে থাকা হাজার হাজার ছবির সাথে দ্রুত চেক করে।',
+            'কোনো মিল পাওয়া গেলে রিপোর্টারকে ফোন/ইমেইলে অ্যালার্ট দেওয়া হয়।',
+            'আপনিও ছবির মাধ্যমে যে কাউকে সার্চ করে দেখতে পারেন।'
+        ]
+    },
+    { 
+        icon: BookOpen, 
+        title: 'আইনি সহায়তা', 
+        desc: 'নিখোঁজ মামলায় পুলিশি পদক্ষেপ ও আইনি অধিকার', 
+        color: 'text-slate-600 bg-slate-100',
+        headerBg: 'bg-slate-600',
+        details: [
+            'নিখোঁজ হওয়ার সাথে সাথে আপনার স্থানীয় থানায় একটি জিডি ডায়েরি করুন।',
+            'পুলিশের পাঠানো "ভিকটিম সাপোর্ট সেন্টারের" সাথে যোগাযোগ করুন।',
+            '২৪ ঘণ্টা পার হলে সরাসরি আইনি মামলা (FIR) করতে পারেন।',
+            'লিগ্যাল এড অফিস থেকে নিখোঁজদের অধিকার সম্পর্কে পরামর্শ নিন।'
+        ]
+    },
 ];
 
 const FaqItem = ({ q, a }) => {
@@ -78,8 +145,7 @@ const FaqItem = ({ q, a }) => {
 };
 
 export default function HelpPage() {
-    const [search, setSearch] = useState('');
-    const filtered = FAQS.filter(f => f.q.includes(search) || f.a.includes(search));
+    const [selectedGuide, setSelectedGuide] = useState(null);
 
     return (
         <div className="bg-background min-h-screen">
@@ -91,18 +157,7 @@ export default function HelpPage() {
                 </div>
                 <div className="relative z-10 max-w-2xl mx-auto">
                     <h1 className="text-4xl font-black mb-3">সহায়তা কেন্দ্র</h1>
-                    <p className="text-white/70 text-sm mb-6">আপনার যেকোনো প্রশ্নের উত্তর খুঁজুন অথবা আমাদের সাথে সরাসরি যোগাযোগ করুন</p>
-                    {/* Search bar */}
-                    <div className="relative max-w-md mx-auto">
-                        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            placeholder="প্রশ্ন খুঁজুন..."
-                            className="w-full pl-10 pr-4 py-3 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-white/30 shadow-md"
-                        />
-                    </div>
+                    <p className="text-white/70 text-sm">আপনার যেকোনো প্রশ্নের উত্তর খুঁজুন অথবা আমাদের সাথে সরাসরি যোগাযোগ করুন</p>
                 </div>
             </div>
 
@@ -124,22 +179,70 @@ export default function HelpPage() {
                 <div className="mb-12">
                     <h2 className="text-2xl font-black text-gray-800 mb-2">দ্রুত নির্দেশিকা</h2>
                     <p className="text-sm text-gray-400 mb-6">সাধারণ কাজগুলো কীভাবে করবেন</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {GUIDES.map(g => (
-                            <Link to={g.link} key={g.title}
-                                className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow group flex items-start gap-4">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${g.color}`}>
-                                    <g.icon size={18} />
+                            <button
+                                onClick={() => setSelectedGuide(g)}
+                                key={g.title}
+                                className="bg-white rounded-[24px] p-6 border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex items-center gap-5 text-left"
+                            >
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${g.color} transition-transform group-hover:scale-110`}>
+                                    <g.icon size={24} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-bold text-gray-800 text-sm mb-0.5">{g.title}</p>
-                                    <p className="text-xs text-gray-400 line-clamp-2">{g.desc}</p>
+                                    <p className="font-extrabold text-gray-900 text-base mb-1">{g.title}</p>
+                                    <p className="text-sm text-gray-400 font-medium">{g.desc}</p>
                                 </div>
-                                <ArrowRight size={14} className="text-gray-300 group-hover:text-primary transition-colors flex-shrink-0 mt-1" />
-                            </Link>
+                                <ChevronRight size={20} className="text-gray-300 group-hover:text-primary transition-colors flex-shrink-0" />
+                            </button>
                         ))}
                     </div>
                 </div>
+
+                {/* Detailed Guide Modal */}
+                {selectedGuide && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <div className="bg-white rounded-[32px] w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
+                            <div className={`p-8 ${selectedGuide.headerBg} flex items-center justify-between`}>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
+                                        <selectedGuide.icon size={24} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black text-white">{selectedGuide.title}</h3>
+                                        <p className="text-white/80 text-xs font-bold uppercase tracking-wider">নির্দেশিকা</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedGuide(null)}
+                                    className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            <div className="p-8">
+                                <ul className="space-y-4">
+                                    {selectedGuide.details.map((step, i) => (
+                                        <li key={i} className="flex gap-4 group">
+                                            <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black flex-shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
+                                                {i + 1}
+                                            </div>
+                                            <p className="text-sm text-gray-600 leading-relaxed font-medium">
+                                                {step}
+                                            </p>
+                                        </li>
+                                    ))}
+                                </ul>
+                                <button
+                                    onClick={() => setSelectedGuide(null)}
+                                    className={`w-full mt-8 ${selectedGuide.headerBg} text-white py-4 rounded-2xl font-bold text-sm hover:opacity-90 transition-all shadow-lg active:scale-95`}
+                                >
+                                    ঠিক আছে
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* How It Works Steps */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-12">
@@ -167,19 +270,9 @@ export default function HelpPage() {
                 {/* FAQ Section */}
                 <div className="mb-12">
                     <h2 className="text-2xl font-black text-gray-800 mb-2">সচরাচর জিজ্ঞাসা (FAQ)</h2>
-                    <p className="text-sm text-gray-400 mb-6">
-                        {search ? `"${search}" — ${filtered.length}টি ফলাফল` : `সবচেয়ে বেশি জিজ্ঞাসিত প্রশ্নগুলো`}
-                    </p>
+                    <p className="text-sm text-gray-400 mb-6">সবচেয়ে বেশি জিজ্ঞাসিত প্রশ্নগুলো</p>
                     <div className="space-y-3">
-                        {filtered.length > 0
-                            ? filtered.map((f, i) => <FaqItem key={i} q={f.q} a={f.a} />)
-                            : (<div className="text-center py-10 text-gray-400">
-                                <Search size={28} className="mx-auto mb-2 opacity-30" />
-                                <p className="text-sm">কোনো প্রশ্ন পাওয়া যায়নি।
-                                    <button onClick={() => setSearch('')} className="text-primary ml-1 hover:underline">সব দেখুন</button>
-                                </p>
-                            </div>)
-                        }
+                        {FAQS.map((f, i) => <FaqItem key={i} q={f.q} a={f.a} />)}
                     </div>
                 </div>
 
