@@ -6,7 +6,7 @@ import {
     ToggleLeft, ToggleRight, Clock, HelpCircle, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
-import { AdminSidebar } from './AdminDashboardPage';
+import { AdminSidebar } from '../Components/AdminSidebar';
 import AdminNavbar from '../Components/AdminNavbar';
 
 

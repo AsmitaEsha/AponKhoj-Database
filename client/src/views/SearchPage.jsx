@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 import { Link } from 'react-router-dom';
 import { MapPin, Shirt, ArrowRight, SlidersHorizontal, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
@@ -13,8 +15,6 @@ const avatar = (seed, gender, age) => {
     return `https://api.dicebear.com/7.x/${style}/png?seed=${encodeURIComponent(seed)}&size=300&backgroundColor=${bg}`;
 };
 
-const ALL_REPORTS = [];
-
 const DIVISIONS = ['পুরো বাংলাদেশ', 'ঢাকা', 'চট্টগ্রাম', 'সিলেট', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'রংপুর', 'ময়মনসিংহ'];
 const SORT_OPTIONS = ['সর্বশেষ আগে', 'সবচেয়ে পুরনো', 'বয়স (কম-বেশি)'];
 const COLORS = ['লাল', 'নীল', 'হলুদ', 'সাদা', 'কালো', 'সবুজ'];
@@ -27,6 +27,8 @@ const StatusBadge = ({ status }) => (
 );
 
 export default function SearchPage() {
+    const [reports, setReports] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [activeDiv, setActiveDiv] = useState('পুরো বাংলাদেশ');
     const [statusFilter, setStatusFilter] = useState('সব');
     const [ageRange, setAgeRange] = useState(100);
@@ -35,6 +37,54 @@ export default function SearchPage() {
     const [page, setPage] = useState(1);
     const [nearbyOnly, setNearbyOnly] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(true);
+
+    useEffect(() => {
+        const fetchAll = async () => {
+            try {
+                const [missingRes, foundRes] = await Promise.all([
+                    axios.get(`${API_URL}/missing-reports/published`),
+                    axios.get(`${API_URL}/found-reports/published`)
+                ]);
+                
+                const missing = (missingRes.data.reports || []).map(r => ({
+                    id: `m-${r.id}`,
+                    origId: r.id,
+                    type: 'missing',
+                    name: r.name,
+                    age: r.age || 0,
+                    gender: r.gender || 'unknown',
+                    district: r.district,
+                    date: r.lastSeenDate,
+                    status: 'missing',
+                    clothing: r.clothingDescription || 'অজানা',
+                    photoUrl: r.photoUrl,
+                    seed: r.name
+                }));
+
+                const found = (foundRes.data.reports || []).map(r => ({
+                    id: `f-${r.id}`,
+                    origId: r.id,
+                    type: 'found',
+                    name: r.name,
+                    age: r.age || 0,
+                    gender: r.gender || 'unknown',
+                    district: r.district,
+                    date: r.foundDate,
+                    status: 'found',
+                    clothing: r.clothingDescription || 'অজানা',
+                    photoUrl: r.photoUrl,
+                    seed: r.name
+                }));
+
+                setReports([...missing, ...found].sort((a, b) => new Date(b.date) - new Date(a.date)));
+            } catch (err) {
+                console.error("Failed to load reports", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchAll();
+    }, []);
 
     const toggleColor = (c) =>
         setSelectedColors(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
@@ -49,12 +99,17 @@ export default function SearchPage() {
     };
 
     // Filter logic
-    const filtered = ALL_REPORTS.filter(r => {
-        if (activeDiv !== 'পুরো বাংলাদেশ' && r.division !== activeDiv) return false;
+    const filtered = reports.filter(r => {
+        if (activeDiv !== 'পুরো বাংলাদেশ' && r.district !== activeDiv) return false;
         if (statusFilter === 'নিখোঁজ' && r.status !== 'missing') return false;
         if (statusFilter === 'পাওয়া গেছে' && r.status !== 'found') return false;
         if (r.age > ageRange) return false;
         return true;
+    }).sort((a, b) => {
+        if (sortBy === 'সর্বশেষ আগে') return new Date(b.date) - new Date(a.date);
+        if (sortBy === 'সবচেয়ে পুরনো') return new Date(a.date) - new Date(b.date);
+        if (sortBy === 'বয়স (কম-বেশি)') return a.age - b.age;
+        return 0;
     });
 
     const totalPages = Math.ceil(filtered.length / PER_PAGE);
@@ -69,7 +124,7 @@ export default function SearchPage() {
             {/* Image */}
             <div className="relative bg-[#f5ede2] h-52 overflow-hidden flex items-center justify-center">
                 <img
-                    src={avatar(r.seed, r.gender, r.age)}
+                    src={r.photoUrl || avatar(r.seed, r.gender, r.age)}
                     alt={r.name}
                     className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
                     onError={e => { e.target.src = `https://api.dicebear.com/7.x/shapes/png?seed=${r.id}&size=300&backgroundColor=e8ddd4`; }}

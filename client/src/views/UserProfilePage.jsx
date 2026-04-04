@@ -7,6 +7,10 @@ import {
     FileText, Key, Trash2, HelpCircle
 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 /* ─────── reusable input ─────── */
 const Field = ({ label, icon: Icon, error, children }) => (
@@ -92,12 +96,23 @@ function PersonalInfoTab({ user, updateUser }) {
 
         setErrors({});
         setSaving(true);
-        // Simulate API call
-        await new Promise(r => setTimeout(r, 1200)); 
-        updateUser({ ...form, avatarUrl: avatar });
-        setSaving(false);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
+        try {
+            const token = localStorage.getItem('aponkhoj_token');
+            const res = await axios.put(`${API_URL}/user/profile/me`, form, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.data.success) {
+                updateUser({ ...form, avatarUrl: avatar });
+                setSaved(true);
+                toast.success('প্রোফাইল সফলভাবে আপডেট হয়েছে');
+                setTimeout(() => setSaved(false), 3000);
+            }
+        } catch (error) {
+            console.error('Profile update error:', error);
+            toast.error(error.response?.data?.error || 'আপডেট করতে সমস্যা হয়েছে');
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
@@ -189,11 +204,27 @@ function PasswordTab() {
         if (form.newPass !== form.confirm) { setError('নতুন পাসওয়ার্ড দুটি মিলছে না'); return; }
         if (form.newPass.length < 8) { setError('পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে'); return; }
         setSaving(true);
-        await new Promise(r => setTimeout(r, 900)); // replace with real API
-        setSaving(false);
-        setSaved(true);
-        setForm({ current: '', newPass: '', confirm: '' });
-        setTimeout(() => setSaved(false), 3000);
+        try {
+            const token = localStorage.getItem('aponkhoj_token');
+            const res = await axios.put(`${API_URL}/user/profile/password`, {
+                currentPassword: form.current,
+                newPassword: form.newPass
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            if (res.data.success) {
+                setSaved(true);
+                setForm({ current: '', newPass: '', confirm: '' });
+                toast.success('পাসওয়ার্ড সফলভাবে পরিবর্তন করা হয়েছে');
+                setTimeout(() => setSaved(false), 3000);
+            }
+        } catch (error) {
+            console.error('Password change error:', error);
+            toast.error(error.response?.data?.error || 'পাসওয়ার্ড পরিবর্তন করতে সমস্যা হয়েছে');
+        } finally {
+            setSaving(false);
+        }
     };
 
     const EyeBtn = ({ k }) => (

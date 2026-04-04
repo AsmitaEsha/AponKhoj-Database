@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
     LayoutDashboard, FileText, Users, BarChart2, Settings, LogOut,
     TrendingUp, TrendingDown, ArrowRight, CheckCircle,
@@ -8,6 +8,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
 import AdminNavbar from '../Components/AdminNavbar';
+import { AdminSidebar } from '../Components/AdminSidebar';
+import AdminReportsPage from './AdminReportsPage';
+import { ModerationSection } from './AdminModerationPage';
 
 /* ─────────────────────────────────────────────────────────────
    DATA HOOK
@@ -17,6 +20,7 @@ import AdminNavbar from '../Components/AdminNavbar';
 ───────────────────────────────────────────────────────────── */
 function useAdminData() {
     const [loading, setLoading] = useState(true);
+    const { token } = useAuth();
 
     /* ── stats ── */
     const [stats, setStats] = useState({
@@ -47,19 +51,75 @@ function useAdminData() {
     const [activity, setActivity] = useState([]);
 
     useEffect(() => {
-        /* ────────────────────────────────────────────────────
-           TODO: replace the block below with real API calls
-           Example:
-             const [statsRes, reportsRes] = await Promise.all([
-               apiClient.get('/admin/stats'),
-               apiClient.get('/admin/reports/recent'),
-             ]);
-             setStats(statsRes.data);
-             setReports(reportsRes.data);
-             ...
-           ──────────────────────────────────────────────────── */
-        setLoading(false);   // remove this line once you have real data
-    }, []);
+        const fetchData = async () => {
+            try {
+                // To safely handle missing API endpoints without crashing UI:
+                const token = localStorage.getItem('aponkhoj_token');
+                if (!token) {
+                    setLoading(false);
+                    return;
+                }
+
+                const headers = { Authorization: `Bearer ${token}` };
+                
+                const [missingRes, foundRes, systemReportsRes, recentMissingPendingRes, usersRes] = await Promise.all([
+                    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/missing-reports/stats`).then(r => r.json()),
+                    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/found-reports/stats`).then(r => r.json()),
+                    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/reports`, { headers }).then(r => r.json()),
+                    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/missing-reports/admin/pending`, { headers }).then(r => r.json()),
+                    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/user`).then(r => r.json())
+                ]);
+
+                const mTotal = missingRes.totalSubmitted || 0;
+                const fTotal = foundRes.totalSubmitted || 0;
+                const activeMissing = missingRes.totalPending || 0;
+                const reunions = (missingRes.totalApproved || 0) + (foundRes.totalApproved || 0);
+
+                setStats({
+                    totalReports: mTotal + fTotal + (systemReportsRes.reports ? systemReportsRes.reports.length : 0),
+                    activeMissing,
+                    reunions,
+                    users: Array.isArray(usersRes) ? usersRes.length : 0, 
+                    newUsersWeek: Array.isArray(usersRes) ? usersRes.filter(u => (new Date() - new Date(u.createdAt)) < 7 * 24 * 60 * 60 * 1000).length : 0,
+                    successRate: ((reunions / ((mTotal + fTotal) || 1)) * 100).toFixed(1),
+                });
+
+                // Set recent reports (for the overview table)
+                if (Array.isArray(recentMissingPendingRes)) {
+                    setReports(recentMissingPendingRes.slice(0, 5).map(r => ({
+                        id: r.id,
+                        name: r.name,
+                        age: r.age,
+                        division: r.district,
+                        status: 'pending',
+                        date: r.date
+                    })));
+                }
+
+                // Setup some realistic status data for the donut
+                setStatusData([
+                    { label: 'অপেক্ষমাণ', value: activeMissing, pct: mTotal > 0 ? ((activeMissing / (mTotal + fTotal)) * 100).toFixed(0) : 0, color: '#f59e0b' },
+                    { label: 'অনুমোদিত', value: reunions, pct: mTotal > 0 ? ((reunions / (mTotal + fTotal)) * 100).toFixed(0) : 0, color: '#10b981' }
+                ]);
+
+                // Setup recent users list
+                if (Array.isArray(usersRes)) {
+                    const sortedUsers = [...usersRes].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    setRecentUsers(sortedUsers.slice(0, 5).map(u => ({
+                        name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'অজানা',
+                        email: u.email,
+                        joined: new Date(u.createdAt).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' })
+                    })));
+                }
+
+            } catch (error) {
+                console.error("Dashboard data load error:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, [token]);
 
     return {
         loading,
@@ -172,97 +232,7 @@ function KpiCard({ title, value, sub, trend, trendUp, color, icon: Icon }) {
     );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   ADMIN SIDEBAR (exported so AdminProfilePage can reuse it)
-───────────────────────────────────────────────────────────── */
-export function AdminSidebar({ active, onNav, collapsed, onToggle }) {
-    const { user, logout } = useAuth();
-    const navigate = useNavigate();
 
-    const NAV = [
-        { id: 'overview', label: 'ওভারভিউ', icon: LayoutDashboard },
-        { id: 'reports', label: 'রিপোর্ট ব্যবস্থাপনা', icon: FileText },
-        { id: 'users', label: 'ব্যবহারকারী', icon: Users },
-        { id: 'analytics', label: 'বিশ্লেষণ', icon: BarChart2 },
-    ];
-
-    const initials = user?.name
-        ? user.name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase()
-        : 'A';
-
-    return (
-        <aside className={`flex flex-col bg-gray-900 text-white transition-all duration-300 flex-shrink-0
-                           ${collapsed ? 'w-16' : 'w-60'} min-h-screen`}>
-
-            {/* Logo */}
-            <div className="flex items-center justify-between px-4 py-5 border-b border-gray-800">
-                {!collapsed && (
-                    <div>
-                        <p className="font-black text-sm text-white leading-tight">আপনখোঁজ</p>
-                        <p className="text-[10px] text-red-400 font-bold tracking-widest uppercase mt-0.5">Admin Panel</p>
-                    </div>
-                )}
-                <button onClick={onToggle}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors">
-                    {collapsed ? <Menu size={16} /> : <X size={16} />}
-                </button>
-            </div>
-
-            {/* Nav items */}
-            <nav className="flex-1 py-4 px-2 space-y-1">
-                {NAV.map(item => (
-                    <button key={item.id} onClick={() => onNav(item.id)}
-                        className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all
-                                    ${active === item.id
-                                ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
-                        <item.icon size={16} className="flex-shrink-0" />
-                        {!collapsed && <span>{item.label}</span>}
-                        {!collapsed && active === item.id && <ChevronRight size={12} className="ml-auto" />}
-                    </button>
-                ))}
-
-                <div className="border-t border-gray-800 my-2 pt-2">
-                    <Link to="/admin/moderation">
-                        <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm
-                                           font-medium text-gray-400 hover:bg-gray-800 hover:text-white transition-all">
-                            <Flag size={16} className="flex-shrink-0" />
-                            {!collapsed && 'মডারেশন'}
-                        </button>
-                    </Link>
-                    <Link to="/admin/profile">
-                        <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm
-                                           font-medium text-gray-400 hover:bg-gray-800 hover:text-white transition-all">
-                            <Settings size={16} className="flex-shrink-0" />
-                            {!collapsed && 'অ্যাডমিন প্রোফাইল'}
-                        </button>
-                    </Link>
-                </div>
-            </nav>
-
-            {/* Admin info + logout */}
-            <div className="border-t border-gray-800 p-3">
-                {!collapsed && (
-                    <div className="flex items-center gap-2.5 mb-3 px-1">
-                        <div className="w-8 h-8 rounded-full bg-red-500/20 border border-red-500/30
-                                        flex items-center justify-center text-red-400 font-black text-xs flex-shrink-0">
-                            {initials}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-white truncate">{user?.name || 'Admin'}</p>
-                            <p className="text-[10px] text-gray-500 truncate">{user?.email || ''}</p>
-                        </div>
-                    </div>
-                )}
-                <button onClick={() => { logout(); navigate('/'); }}
-                    className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-colors">
-                    <LogOut size={14} className="flex-shrink-0" />
-                    {!collapsed && 'লগআউট'}
-                </button>
-            </div>
-        </aside>
-    );
-}
 
 /* ─────────────────────────────────────────────────────────────
    SECTIONS
@@ -682,18 +652,52 @@ function AnalyticsSection({ data }) {
 ───────────────────────────────────────────────────────────── */
 const SECTIONS = {
     overview: OverviewSection,
-    reports: ReportsSection,
+    reports: ModerationSection,
+    moderation: ModerationSection,
+    systemReports: AdminReportsPage,
     users: UsersSection,
     analytics: AnalyticsSection,
 };
 
+const BREADCRUMB_LABELS = {
+    overview: 'ওভারভিউ',
+    reports: 'রিপোর্ট ব্যবস্থাপনা',
+    moderation: 'মডারেশন প্যানেল',
+    systemReports: 'সিস্টেম রিপোর্ট',
+    users: 'ব্যবহারকারী ব্যবস্থাপনা',
+    analytics: 'বিশ্লেষণ',
+    profile: 'অ্যাডমিন প্রোফাইল'
+};
+
 export default function AdminDashboardPage() {
-    const [activeSection, setActiveSection] = useState('overview');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const navigate = useNavigate();
+    
+    // Default to 'overview' if no tab param
+    const tab = searchParams.get('tab') || 'overview';
+    const [activeSection, setActiveSection] = useState(tab);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
 
+    /* Sync state when URL changes */
+    useEffect(() => {
+        if (tab && tab !== activeSection) {
+            setActiveSection(tab);
+        }
+    }, [tab]);
+
     /* All live data is managed here — wire up via useAdminData() hook */
     const adminData = useAdminData();
+
+    const onNav = (id) => {
+        if (id === 'profile') {
+            navigate('/admin/profile');
+            return;
+        }
+        // If we want to support back/forward button for tabs:
+        setSearchParams({ tab: id });
+        setActiveSection(id);
+    };
 
     const Section = SECTIONS[activeSection] ?? OverviewSection;
 
@@ -701,7 +705,7 @@ export default function AdminDashboardPage() {
         <div className="flex h-screen bg-gray-50 overflow-hidden">
             {/* Desktop sidebar */}
             <div className="hidden lg:flex">
-                <AdminSidebar active={activeSection} onNav={setActiveSection}
+                <AdminSidebar active={activeSection} onNav={onNav}
                     collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(p => !p)} />
             </div>
 
@@ -710,7 +714,7 @@ export default function AdminDashboardPage() {
                 <div className="lg:hidden fixed inset-0 z-50 flex">
                     <div className="flex-shrink-0">
                         <AdminSidebar active={activeSection}
-                            onNav={id => { setActiveSection(id); setMobileOpen(false); }}
+                            onNav={id => { onNav(id); setMobileOpen(false); }}
                             collapsed={false} onToggle={() => setMobileOpen(false)} />
                     </div>
                     <div className="flex-1 bg-black/50" onClick={() => setMobileOpen(false)} />
@@ -720,10 +724,7 @@ export default function AdminDashboardPage() {
             {/* Main content */}
             <div className="flex-1 flex flex-col overflow-hidden">
                 <AdminNavbar
-                    breadcrumb={activeSection === 'overview' ? 'ওভারভিউ'
-                        : activeSection === 'reports' ? 'রিপোর্ট ব্যবস্থাপনা'
-                            : activeSection === 'users' ? 'ব্যবহারকারী'
-                                : 'বিশ্লেষণ'}
+                    breadcrumb={BREADCRUMB_LABELS[activeSection] || 'প্যানেল'}
                     onMobileMenu={() => setMobileOpen(true)} />
 
                 {/* Scrollable content */}
