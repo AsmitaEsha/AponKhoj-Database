@@ -23,6 +23,7 @@ import './index.css';
 import { Toaster } from 'react-hot-toast';
 import ReportFoundPage from './views/ReportFoundPage';
 import SearchPage from './views/SearchPage';
+import ReportDetailPage from './views/ReportDetailPage';
 import UserDashboardPage from './views/UserDashboardPage';
 import SystemReportPage from './views/SystemReportPage';
 import LegalAidPage from './views/LegalAidPage';
@@ -48,6 +49,7 @@ function AppShell() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/found" element={<FoundListPage />} />
           <Route path="/search-page" element={<SearchPage />} />
+          <Route path="/report/:id" element={<ReportDetailPage />} />
           <Route path="/report-found" element={<ReportFoundPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/success-stories" element={<SuccessStoriesPage />} />

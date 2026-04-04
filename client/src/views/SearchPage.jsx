@@ -153,7 +153,7 @@ export default function SearchPage() {
                         <span>{r.clothing}</span>
                     </div>
                 </div>
-                <Link to={`/emergency/${r.id}`}
+                <Link to={`/report/${r.id}`}
                     className="flex items-center justify-center gap-1.5 w-full border border-primary text-primary text-xs py-2 rounded-xl hover:bg-primary hover:text-white transition-colors font-medium">
                     বিস্তারিত দেখুন <ArrowRight size={12} />
                 </Link>

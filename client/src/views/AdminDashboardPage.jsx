@@ -22,96 +22,50 @@ function useAdminData() {
     const [loading, setLoading] = useState(true);
     const { token } = useAuth();
 
-    /* ── stats ── */
-    const [stats, setStats] = useState({
-        totalReports: 0,
-        activeMissing: 0,
-        reunions: 0,
-        users: 0,
-        newUsersWeek: 0,
-        successRate: 0,
-    });
-
-    /* ── bar chart: { label: string, value: number }[] ── */
+    const [stats, setStats] = useState({ totalReports: 0, activeMissing: 0, reunions: 0, users: 0, newUsersWeek: 0, successRate: 0 });
     const [monthlyData, setMonthlyData] = useState([]);
-
-    /* ── donut chart: { label, value, color, pct }[] ── */
     const [statusData, setStatusData] = useState([]);
-
-    /* ── division bars: { name, count, max }[] ── */
     const [divisions, setDivisions] = useState([]);
-
-    /* ── reports table: { id, name, age, division, status, date }[] ── */
     const [reports, setReports] = useState([]);
-
-    /* ── recent users: { name, email, joined }[] ── */
     const [recentUsers, setRecentUsers] = useState([]);
-
-    /* ── activity feed: { text, time, type }[] ── */
     const [activity, setActivity] = useState([]);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // To safely handle missing API endpoints without crashing UI:
-                const token = localStorage.getItem('aponkhoj_token');
-                if (!token) {
-                    setLoading(false);
-                    return;
-                }
+                const authToken = localStorage.getItem('aponkhoj_token');
+                if (!authToken) { setLoading(false); return; }
+                const headers = { Authorization: `Bearer ${authToken}` };
+                const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-                const headers = { Authorization: `Bearer ${token}` };
-                
-                const [missingRes, foundRes, systemReportsRes, recentMissingPendingRes, usersRes] = await Promise.all([
-                    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/missing-reports/stats`).then(r => r.json()),
-                    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/found-reports/stats`).then(r => r.json()),
-                    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/reports`, { headers }).then(r => r.json()),
-                    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/missing-reports/admin/pending`, { headers }).then(r => r.json()),
-                    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/user`).then(r => r.json())
+                // Single unified endpoint — backend computes all stats, charts, users & activity
+                const [adminRes, recentReportsRes] = await Promise.all([
+                    fetch(`${API}/admin/stats`, { headers }).then(r => r.json()),
+                    fetch(`${API}/admin/reports/recent`, { headers }).then(r => r.json()),
                 ]);
 
-                const mTotal = missingRes.totalSubmitted || 0;
-                const fTotal = foundRes.totalSubmitted || 0;
-                const activeMissing = missingRes.totalPending || 0;
-                const reunions = (missingRes.totalApproved || 0) + (foundRes.totalApproved || 0);
-
-                setStats({
-                    totalReports: mTotal + fTotal + (systemReportsRes.reports ? systemReportsRes.reports.length : 0),
-                    activeMissing,
-                    reunions,
-                    users: Array.isArray(usersRes) ? usersRes.length : 0, 
-                    newUsersWeek: Array.isArray(usersRes) ? usersRes.filter(u => (new Date() - new Date(u.createdAt)) < 7 * 24 * 60 * 60 * 1000).length : 0,
-                    successRate: ((reunions / ((mTotal + fTotal) || 1)) * 100).toFixed(1),
-                });
-
-                // Set recent reports (for the overview table)
-                if (Array.isArray(recentMissingPendingRes)) {
-                    setReports(recentMissingPendingRes.slice(0, 5).map(r => ({
-                        id: r.id,
-                        name: r.name,
-                        age: r.age,
-                        division: r.district,
-                        status: 'pending',
-                        date: r.date
+                if (adminRes.stats) {
+                    setStats({
+                        totalReports: adminRes.stats.totalReports ?? 0,
+                        activeMissing: adminRes.stats.activeMissing ?? 0,
+                        reunions: adminRes.stats.reunions ?? 0,
+                        users: adminRes.stats.users ?? 0,
+                        newUsersWeek: adminRes.stats.newUsersWeek ?? 0,
+                        successRate: adminRes.stats.successRate ?? 0,
+                    });
+                }
+                if (Array.isArray(adminRes.monthlyData)) setMonthlyData(adminRes.monthlyData);
+                if (Array.isArray(adminRes.statusData)) setStatusData(adminRes.statusData.filter(d => d.value > 0));
+                if (Array.isArray(adminRes.divisions)) setDivisions(adminRes.divisions);
+                if (Array.isArray(adminRes.recentUsers)) setRecentUsers(adminRes.recentUsers);
+                if (Array.isArray(adminRes.activity)) setActivity(adminRes.activity);
+                if (Array.isArray(recentReportsRes)) {
+                    setReports(recentReportsRes.map(r => ({
+                        id: r.id, name: r.name, age: r.age, division: r.district,
+                        status: r.status === 'published' ? 'closed' : (r.status || 'pending'),
+                        date: r.date,
                     })));
                 }
-
-                // Setup some realistic status data for the donut
-                setStatusData([
-                    { label: 'অপেক্ষমাণ', value: activeMissing, pct: mTotal > 0 ? ((activeMissing / (mTotal + fTotal)) * 100).toFixed(0) : 0, color: '#f59e0b' },
-                    { label: 'অনুমোদিত', value: reunions, pct: mTotal > 0 ? ((reunions / (mTotal + fTotal)) * 100).toFixed(0) : 0, color: '#10b981' }
-                ]);
-
-                // Setup recent users list
-                if (Array.isArray(usersRes)) {
-                    const sortedUsers = [...usersRes].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-                    setRecentUsers(sortedUsers.slice(0, 5).map(u => ({
-                        name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'অজানা',
-                        email: u.email,
-                        joined: new Date(u.createdAt).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' })
-                    })));
-                }
-
             } catch (error) {
                 console.error("Dashboard data load error:", error);
             } finally {
@@ -270,8 +224,6 @@ function OverviewSection({ data }) {
             {/* KPI cards */}
             <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                 <KpiCard title="মোট রিপোর্ট" value={stats.totalReports} sub="সর্বকালীন" color="bg-blue-50 text-blue-500" icon={FileText} />
-                <KpiCard title="সক্রিয় নিখোঁজ" value={stats.activeMissing} sub={stats.totalReports ? `মোটের ${((stats.activeMissing / stats.totalReports) * 100).toFixed(1)}%` : '—'} color="bg-amber-50 text-amber-500" icon={AlertTriangle} />
-                <KpiCard title="সফল পুনর্মিলন" value={stats.reunions} sub={`সাফল্যের হার ${stats.successRate}%`} color="bg-emerald-50 text-emerald-500" icon={CheckCircle} />
                 <KpiCard title="নিবন্ধিত ব্যবহারকারী" value={stats.users} sub={`এ সপ্তাহে +${stats.newUsersWeek}`} color="bg-purple-50 text-purple-500" icon={Users} />
             </div>
 

@@ -12,7 +12,6 @@ export function AdminSidebar({ active, onNav, collapsed, onToggle }) {
     const NAV = [
         { id: 'overview',       label: 'ওভারভিউ',          icon: LayoutDashboard, path: '/admin/dashboard' },
         { id: 'moderation',     label: 'মডারেশন',           icon: Flag,            path: '/admin/moderation' },
-        { id: 'systemReports',  label: 'সিস্টেম রিপোর্ট',  icon: AlertTriangle,   path: '/admin/reports' },
         { id: 'profile',        label: 'প্রোফাইল সেটিংস',  icon: Settings,        path: '/admin/profile' },
     ];
 

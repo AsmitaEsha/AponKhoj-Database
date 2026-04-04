@@ -1,6 +1,10 @@
 import { useNavigate, Link } from 'react-router-dom';
-import { Search, ArrowRight, Users, MapPin, CheckCircle, AlertTriangle, Heart, Zap } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Search, ArrowRight, Users, MapPin, CheckCircle, Heart, Zap, Loader2 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const DIVISIONS = ['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
 
@@ -10,48 +14,93 @@ const STEPS = [
     { icon: Heart, label: 'পুনর্মিলন', desc: 'পরিবার ও প্রিয়জন একত্রিত হন', color: 'bg-primary/10 text-primary' },
 ];
 
+const avatar = (seed, gender) => {
+    if (!seed) return `https://api.dicebear.com/7.x/shapes/png?seed=unknown&size=200&backgroundColor=e8e0d5`;
+    const style = gender === 'female' ? 'lorelei' : 'adventurer';
+    const bg = gender === 'female' ? 'f7ede2' : 'd6e8f7';
+    return `https://api.dicebear.com/7.x/${style}/png?seed=${encodeURIComponent(seed)}&size=200&backgroundColor=${bg}`;
+};
+
+const toBn = (n) => String(n).replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]);
+
 const HomePage = () => {
     const { isAuthenticated } = useAuth();
     const navigate = useNavigate();
 
+    const [stats, setStats] = useState({ totalReports: null, reunions: null });
+    const [recentReports, setRecentReports] = useState([]);
+    const [reportsLoading, setReportsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [missingStats, foundStats, missingReports, foundReports] = await Promise.all([
+                    axios.get(`${API_URL}/missing-reports/stats`),
+                    axios.get(`${API_URL}/found-reports/stats`),
+                    axios.get(`${API_URL}/missing-reports/published`),
+                    axios.get(`${API_URL}/found-reports/published`),
+                ]);
+
+                const mTotal = missingStats.data.totalSubmitted || 0;
+                const fTotal = foundStats.data.totalSubmitted || 0;
+                const mApproved = missingStats.data.totalApproved || 0;
+                const fApproved = foundStats.data.totalApproved || 0;
+
+                setStats({ totalReports: mTotal + fTotal, reunions: mApproved + fApproved });
+
+                const missing = (missingReports.data.reports || []).map(r => ({
+                    id: `m-${r.id}`, name: r.name, age: r.age, gender: r.gender,
+                    district: r.district, date: r.lastSeenDate, status: 'missing', photoUrl: r.photoUrl,
+                }));
+                const found = (foundReports.data.reports || []).map(r => ({
+                    id: `f-${r.id}`, name: r.name, age: r.age, gender: r.gender,
+                    district: r.district, date: r.foundDate, status: 'found', photoUrl: r.photoUrl,
+                }));
+
+                const all = [...missing, ...found].sort((a, b) => new Date(b.date) - new Date(a.date));
+                setRecentReports(all.slice(0, 6));
+            } catch (err) {
+                console.error('Failed to load homepage data', err);
+            } finally {
+                setReportsLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
     const handleReportAction = (path) => {
-        if (!isAuthenticated) {
-            navigate(`/login?redirect=${path}`);
-        } else {
-            navigate(path);
-        }
+        if (!isAuthenticated) navigate(`/login?redirect=${path}`);
+        else navigate(path);
     };
+
+    const statsStrip = [
+        { icon: Search, value: stats.totalReports, label: 'রিপোর্ট জমা', color: 'text-secondary' },
+        { icon: CheckCircle, value: stats.reunions, label: 'সফল পুনর্মিলন', color: 'text-accent-teal' },
+        { icon: MapPin, value: 64, label: 'জেলা কভারেজ', color: 'text-primary' },
+    ];
 
     return (
         <div className="bg-background min-h-screen overflow-x-hidden">
 
-            {/* ── Hero Section ── */}
+            {/* ── Hero ── */}
             <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-[#0c2e20] py-20 px-4">
-                {/* Decorative circles */}
                 <div className="absolute top-0 right-0 w-96 h-96 bg-secondary/20 rounded-full translate-x-1/2 -translate-y-1/2 blur-3xl pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent-teal/20 rounded-full -translate-x-1/3 translate-y-1/3 blur-2xl pointer-events-none" />
-
                 <div className="max-w-7xl mx-auto relative z-10 flex flex-col items-center justify-center text-center">
                     <div className="max-w-4xl">
                         <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight mb-4 tracking-tight drop-shadow-sm">
                             হারিয়ে যাওয়া প্রিয়জনকে<br className="hidden md:block" /> খুঁজুন <span className="text-[#ff5a2c]">আপনখোঁজে</span>
                         </h1>
-
                         <p className="text-white/80 text-base md:text-lg max-w-2xl mx-auto mb-10 md:mb-12 leading-relaxed px-4">
                             AI-চালিত ফেস রিকগনিশন, SMS আলার্ট এবং কমিউনিটি-ভিত্তিক রিপোর্টিং — একটি প্ল্যাটফর্মে।
                         </p>
-
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 w-full px-4 sm:px-0">
-                            <button 
-                                onClick={() => handleReportAction('/report-missing')}
-                                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#ff5a2c] hover:bg-[#e0451b] text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-bold text-sm shadow-xl shadow-[#ff5a2c]/20 transition-all"
-                            >
+                            <button onClick={() => handleReportAction('/report-missing')}
+                                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#ff5a2c] hover:bg-[#e0451b] text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-bold text-sm shadow-xl shadow-[#ff5a2c]/20 transition-all">
                                 <Search size={18} /> নিখোঁজ রিপোর্ট করুন
                             </button>
-                            <button 
-                                onClick={() => handleReportAction('/report-found')}
-                                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-bold text-sm transition-all shadow-lg"
-                            >
+                            <button onClick={() => handleReportAction('/report-found')}
+                                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-bold text-sm transition-all shadow-lg">
                                 <Users size={18} /> উদ্ধার তথ্য যোগ করুন
                             </button>
                         </div>
@@ -62,17 +111,18 @@ const HomePage = () => {
             {/* ── Stats Strip ── */}
             <section className="bg-white border-b border-gray-100 py-4 sm:py-6 px-4 shadow-sm">
                 <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 gap-4 sm:gap-0">
-                    {[
-                        { icon: Search, value: '০', label: 'রিপোর্ট জমা', color: 'text-secondary' },
-                        { icon: CheckCircle, value: '০', label: 'সফল পুনর্মিলন', color: 'text-accent-teal' },
-                        { icon: MapPin, value: '৬৪', label: 'জেলা কভারেজ', color: 'text-primary' },
-                    ].map(s => (
+                    {statsStrip.map(s => (
                         <div key={s.label} className="flex flex-row sm:flex-col lg:flex-row items-center justify-center sm:justify-center lg:justify-center gap-3 py-2 sm:py-0 px-4 text-center sm:text-left">
                             <div className={`w-12 h-12 sm:w-10 sm:h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0 ${s.color}`}>
                                 <s.icon size={22} className="sm:w-5 sm:h-5" />
                             </div>
                             <div className="text-left sm:text-center lg:text-left">
-                                <p className={`text-xl sm:text-xl font-black ${s.color}`}>{s.value}</p>
+                                <p className={`text-xl sm:text-xl font-black ${s.color}`}>
+                                    {s.value === null
+                                        ? <Loader2 size={18} className="animate-spin inline" />
+                                        : toBn(s.value)
+                                    }
+                                </p>
                                 <p className="text-xs sm:text-xs text-gray-500">{s.label}</p>
                             </div>
                         </div>
@@ -99,23 +149,18 @@ const HomePage = () => {
                         <div className="flex-1">
                             <label className="block text-xs text-gray-500 mb-1">লিঙ্গ</label>
                             <select className="w-full border border-gray-200 rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white">
-                                <option>উভয়</option>
-                                <option>পুরুষ</option>
-                                <option>নারী</option>
+                                <option>উভয়</option><option>পুরুষ</option><option>নারী</option>
                             </select>
                         </div>
                         <div className="flex-1">
                             <label className="block text-xs text-gray-500 mb-1">অবস্থা</label>
                             <select className="w-full border border-gray-200 rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white">
-                                <option>সব</option>
-                                <option>নিখোঁজ</option>
-                                <option>পাওয়া গেছে</option>
+                                <option>সব</option><option>নিখোঁজ</option><option>পাওয়া গেছে</option>
                             </select>
                         </div>
                         <div className="w-full lg:w-auto mt-2 lg:mt-0">
                             <Link to="/search-page"
-                                className="w-full lg:w-auto flex justify-center items-center gap-2 bg-primary hover:bg-primary-dark text-white px-7 py-3 lg:py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-colors shadow-md"
-                            >
+                                className="w-full lg:w-auto flex justify-center items-center gap-2 bg-primary hover:bg-primary-dark text-white px-7 py-3 lg:py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-colors shadow-md">
                                 <Search size={16} /> অনুসন্ধান
                             </Link>
                         </div>
@@ -131,9 +176,7 @@ const HomePage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {STEPS.map((s, i) => (
                             <div key={s.label} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center relative">
-                                <div className="absolute -top-3 -left-3 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-xs font-black">
-                                    {i + 1}
-                                </div>
+                                <div className="absolute -top-3 -left-3 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-xs font-black">{i + 1}</div>
                                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 ${s.color}`}>
                                     <s.icon size={26} />
                                 </div>
@@ -150,17 +193,48 @@ const HomePage = () => {
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h2 className="text-2xl font-black text-gray-800">সাম্প্রতিক রিপোর্ট</h2>
-                        <p className="text-sm text-gray-400 mt-0.5">সর্বশেষ জমা দেওয়া রিপোর্ট</p>
+                        <p className="text-sm text-gray-400 mt-0.5">সর্বশেষ জমা দেওয়া অনুমোদিত রিপোর্ট</p>
                     </div>
                     <Link to="/search-page" className="flex items-center gap-1 text-sm text-primary font-medium hover:underline">
                         সব দেখুন <ArrowRight size={14} />
                     </Link>
                 </div>
-                
-                <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
-                    <div className="text-4xl mb-3">🔍</div>
-                    <p className="text-gray-500 font-medium">কোনো সাম্প্রতিক রিপোর্ট নেই</p>
-                </div>
+
+                {reportsLoading ? (
+                    <div className="py-20 flex justify-center bg-white rounded-2xl border border-gray-100">
+                        <Loader2 size={28} className="animate-spin text-gray-300" />
+                    </div>
+                ) : recentReports.length === 0 ? (
+                    <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
+                        <div className="text-4xl mb-3">🔍</div>
+                        <p className="text-gray-500 font-medium">কোনো সাম্প্রতিক রিপোর্ট নেই</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        {recentReports.map(r => (
+                            <Link key={r.id} to={`/report/${r.id}`}
+                                className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow group">
+                                <div className="relative bg-[#f5ede2] h-36 overflow-hidden">
+                                    <img
+                                        src={r.photoUrl || avatar(r.name, r.gender)}
+                                        alt={r.name}
+                                        className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                                        onError={e => { e.target.src = `https://api.dicebear.com/7.x/shapes/png?seed=${r.id}&size=200&backgroundColor=e8ddd4`; }}
+                                    />
+                                    <div className="absolute top-1.5 left-1.5">
+                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${r.status === 'missing' ? 'bg-secondary text-white' : 'bg-accent-teal text-white'}`}>
+                                            {r.status === 'missing' ? 'নিখোঁজ' : 'পাওয়া গেছে'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="p-2.5">
+                                    <p className="font-black text-gray-800 text-xs truncate">{r.name}</p>
+                                    <p className="text-[10px] text-gray-400 truncate">{r.district}</p>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                )}
             </section>
 
             {/* ── CTA Banner ── */}
