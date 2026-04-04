@@ -24,12 +24,7 @@ const NOTIF_ICON = {
 /* ─────────────────────────────────────────
    QUICK ACTIONS
 ───────────────────────────────────────── */
-const QUICK_ACTIONS = [
-    { label: 'নতুন রিপোর্ট যোগ করুন', icon: Plus, to: '/admin/dashboard' },
-    { label: 'রিপোর্ট মডারেশন', icon: Flag, to: '/admin/moderation' },
-    { label: 'ব্যবহারকারী ব্যবস্থাপনা', icon: Users, to: '/admin/dashboard' },
-    { label: 'বিশ্লেষণ দেখুন', icon: BarChart2, to: '/admin/dashboard' },
-];
+
 
 /* ─────────────────────────────────────────
    NOTIFICATION PANEL
