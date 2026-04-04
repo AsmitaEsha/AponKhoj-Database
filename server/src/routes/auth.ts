@@ -99,15 +99,34 @@ router.post('/login', async (req: Request, res: Response) => {
     const isAdmin = isAdminCredential(email, password);
 
     if (isAdmin) {
-      const adminToken = generateToken(0, 'admin');
+      // ✅ Sync Admin with Database to get a real ID for relations
+      let adminUser = await db.user.findUnique({ where: { email: email.toLowerCase() } });
+      
+      if (!adminUser) {
+        // Create the admin record if it doesn't exist
+        const hashedPassword = await hashPassword(password);
+        adminUser = await db.user.create({
+          data: {
+            firstName: 'Admin',
+            lastName: 'User',
+            email: email.toLowerCase(),
+            phone: '0000000000', // Placeholder
+            location: 'System',
+            password: hashedPassword,
+            role: 'admin'
+          }
+        });
+      }
+
+      const adminToken = generateToken(adminUser.id, 'admin');
       return res.json({
         message: 'Admin login successful',
         token: adminToken,
         user: {
-          id: 0,
-          firstName: 'Admin',
-          lastName: 'User',
-          email,
+          id: adminUser.id,
+          firstName: adminUser.firstName,
+          lastName: adminUser.lastName,
+          email: adminUser.email,
           role: 'admin'
         }
       });

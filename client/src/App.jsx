@@ -11,6 +11,7 @@ import UserProfilePage from './views/UserProfilePage';
 import AdminDashboardPage from './views/AdminDashboardPage';
 import AdminProfilePage from './views/AdminProfilePage';
 import AdminModerationPage from './views/AdminModerationPage';
+import AdminReportsPage from './views/AdminReportsPage';
 import { AuthProvider } from './helpers/AuthContext';
 import AdminRoute from './helpers/AdminRoute';
 import HelpPage from './views/HelpPage';
@@ -22,7 +23,9 @@ import './index.css';
 import { Toaster } from 'react-hot-toast';
 import ReportFoundPage from './views/ReportFoundPage';
 import SearchPage from './views/SearchPage';
+import ReportDetailPage from './views/ReportDetailPage';
 import UserDashboardPage from './views/UserDashboardPage';
+import SystemReportPage from './views/SystemReportPage';
 import LegalAidPage from './views/LegalAidPage';
 import PrivacyPage from './views/PrivacyPage';
 import ContactPage from './views/ContactPage';
@@ -46,6 +49,7 @@ function AppShell() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/found" element={<FoundListPage />} />
           <Route path="/search-page" element={<SearchPage />} />
+          <Route path="/report/:id" element={<ReportDetailPage />} />
           <Route path="/report-found" element={<ReportFoundPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/success-stories" element={<SuccessStoriesPage />} />
@@ -53,6 +57,7 @@ function AppShell() {
           <Route path="/legal-aid" element={<LegalAidPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/system-report" element={<SystemReportPage />} />
 
           {/* User protected routes */}
           <Route path="/dashboard" element={<UserDashboardPage />} />
@@ -62,6 +67,7 @@ function AppShell() {
           <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
           <Route path="/admin/profile" element={<AdminRoute><AdminProfilePage /></AdminRoute>} />
           <Route path="/admin/moderation" element={<AdminRoute><AdminModerationPage /></AdminRoute>} />
+          <Route path="/admin/reports" element={<AdminRoute><AdminReportsPage /></AdminRoute>} />
         </Routes>
       </main>
       {!isAdminRoute && <Footer />}

@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 import { Link } from 'react-router-dom';
 import { MapPin, Shirt, ArrowRight, SlidersHorizontal, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen, Shield, Calendar } from 'lucide-react';
 
@@ -8,8 +10,6 @@ const avatar = (seed, gender, age) => {
     const bg = gender === 'female' ? 'e8f5f2' : 'd4ede9';
     return `https://api.dicebear.com/7.x/${style}/png?seed=${encodeURIComponent(seed)}&size=300&backgroundColor=${bg}`;
 };
-
-const ALL_FOUND = [];
 
 const DIVISIONS = ['সব', 'ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
 const CONDITIONS = ['সব', 'স্বাভাবিক', 'চিকিৎসাধীন'];
@@ -23,6 +23,8 @@ const conditionColor = c => c === 'স্বাভাবিক'
     : 'bg-accent-red/10 text-accent-red';
 
 export default function FoundListPage() {
+    const [reports, setReports] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [activeDiv, setActiveDiv] = useState('সব');
     const [genderFilter, setGenderFilter] = useState('সবাই');
@@ -31,6 +33,34 @@ export default function FoundListPage() {
     const [selectedColors, setSelectedColors] = useState([]);
     const [sortBy, setSortBy] = useState('সর্বশেষ আগে');
     const [page, setPage] = useState(1);
+
+    useEffect(() => {
+        const fetchFound = async () => {
+            try {
+                const res = await axios.get(`${API_URL}/found-reports/published`);
+                const found = (res.data.reports || []).map(r => ({
+                    id: r.id,
+                    name: r.name,
+                    age: r.age || 0,
+                    gender: r.gender || 'unknown',
+                    district: r.district,
+                    foundDate: r.foundDate,
+                    foundAt: r.address || r.district,
+                    condition: 'স্বাভাবিক',
+                    clothing: r.clothingDescription || 'অজানা',
+                    photoUrl: r.photoUrl,
+                    seed: r.name
+                }));
+                // initial sort by date
+                setReports(found.sort((a,b) => new Date(b.foundDate) - new Date(a.foundDate)));
+            } catch (err) {
+                console.error("Failed to fetch found reports", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchFound();
+    }, []);
 
     const toggleColor = c =>
         setSelectedColors(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
@@ -44,13 +74,18 @@ export default function FoundListPage() {
         setPage(1);
     };
 
-    const filtered = ALL_FOUND.filter(r => {
-        if (activeDiv !== 'সব' && r.division !== activeDiv) return false;
+    const filtered = reports.filter(r => {
+        if (activeDiv !== 'সব' && r.district !== activeDiv) return false;
         if (genderFilter === 'পুরুষ' && r.gender !== 'male') return false;
         if (genderFilter === 'নারী' && r.gender !== 'female') return false;
         if (conditionFilter !== 'সব' && r.condition !== conditionFilter) return false;
         if (r.age > ageRange) return false;
         return true;
+    }).sort((a,b) => {
+        if (sortBy === 'সর্বশেষ আগে') return new Date(b.foundDate) - new Date(a.foundDate);
+        if (sortBy === 'সবচেয়ে পুরনো') return new Date(a.foundDate) - new Date(b.foundDate);
+        if (sortBy === 'বয়স (কম-বেশি)') return a.age - b.age;
+        return 0;
     });
 
     const totalPages = Math.ceil(filtered.length / PER_PAGE);
@@ -61,7 +96,7 @@ export default function FoundListPage() {
             {/* Sketch Avatar */}
             <div className="relative h-52 overflow-hidden bg-[#e8f5f2] flex items-center justify-center">
                 <img
-                    src={avatar(r.seed, r.gender, r.age)}
+                    src={r.photoUrl || avatar(r.seed, r.gender, r.age)}
                     alt={r.name}
                     className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
                     onError={e => { e.target.src = `https://api.dicebear.com/7.x/shapes/png?seed=${r.id}&size=300&backgroundColor=d4ede9`; }}
