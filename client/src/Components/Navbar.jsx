@@ -74,8 +74,7 @@ const Navbar = () => {
     ] : [
         { to: '/dashboard', label: 'ড্যাশবোর্ড', icon: LayoutDashboard },
         { to: '/profile', label: 'প্রোফাইল সেটিংস', icon: Settings },
-        { to: '/profile?tab=reports', label: 'আমার রিপোর্ট', icon: FileText },
-        { to: '/profile?tab=security', label: 'নিরাপত্তা', icon: Shield },
+       
     ];
 
     return (

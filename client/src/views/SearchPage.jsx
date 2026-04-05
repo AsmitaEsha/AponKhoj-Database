@@ -87,7 +87,7 @@ const Card = ({ r }) => (
                 onError={e => { e.target.src = avatar(r.id, r.gender, r.age); }}
             />
             <div className="absolute top-2 left-2">
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white">অনুমোদিত</span>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white">নিখোঁজ</span>
             </div>
             <div className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm text-xs text-gray-500 px-2 py-0.5 rounded-full">
                 {r.date}
@@ -114,7 +114,7 @@ const Card = ({ r }) => (
                 )}
             </div>
             <Link
-                to={`/reports/${r.id}`}
+                to={`/report/m-${r.id}`}
                 className="flex items-center justify-center gap-1.5 w-full border border-primary text-primary text-xs py-2 rounded-xl hover:bg-primary hover:text-white transition-colors font-medium"
             >
                 বিস্তারিত দেখুন <ArrowRight size={12} />
