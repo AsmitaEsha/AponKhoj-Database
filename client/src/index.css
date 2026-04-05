@@ -19,3 +19,9 @@ body {
   color: #1f2937;
   font-family: 'Noto Sans Bengali', sans-serif;
 }
+
+/* Keep only custom password visibility toggles from the app UI. */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
