@@ -90,18 +90,103 @@ export const store = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Get paginated published missing reports with server-side filters
+ * Query params: district, age_min, age_max, gender, search, sort, page, per_page
+ */
 export const getPublished = async (req: Request, res: Response) => {
   try {
-    const reports = await db.missingPersonReport.findMany({
-      where: {
-        approved: true,
-        status: 'published',
-      },
-      include: {
-        user: { select: { id: true, firstName: true, lastName: true, email: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const {
+      district,
+      age_min,
+      age_max,
+      gender,
+      search,
+      sort = 'newest',
+      page = '1',
+      per_page = '9',
+    } = req.query;
+
+    // Build where clause dynamically
+    const where: any = {
+      approved: true,
+      status: 'published',
+    };
+
+    // Filter by district
+    if (district && typeof district === 'string' && district !== 'all') {
+      where.district = district;
+    }
+
+    // Filter by age range
+    const ageMin = age_min && typeof age_min === 'string' ? parseInt(age_min) : null;
+    const ageMax = age_max && typeof age_max === 'string' ? parseInt(age_max) : null;
+
+    if (ageMin !== null && ageMin > 0) {
+      where.AND = where.AND || [];
+      where.AND.push({
+        OR: [{ age: null }, { age: { gte: ageMin } }],
+      });
+    }
+
+    if (ageMax !== null && ageMax < 100) {
+      where.AND = where.AND || [];
+      where.AND.push({
+        OR: [{ age: null }, { age: { lte: ageMax } }],
+      });
+    }
+
+    // Filter by gender
+    if (gender && typeof gender === 'string' && gender !== 'all') {
+      where.gender = gender;
+    }
+
+    // Search by name - NO mode parameter for MS SQL
+    if (search && typeof search === 'string' && search.trim()) {
+      where.name = {
+        contains: search.trim(),
+      };
+    }
+
+    // Determine sort order
+    let orderBy: any = { createdAt: 'desc' };
+    const sortValue = typeof sort === 'string' ? sort : 'newest';
+    switch (sortValue) {
+      case 'oldest':
+        orderBy = { createdAt: 'asc' };
+        break;
+      case 'age_asc':
+        orderBy = [{ age: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }];
+        break;
+      case 'age_desc':
+        orderBy = [{ age: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }];
+        break;
+      default:
+        orderBy = { createdAt: 'desc' };
+    }
+
+    // Pagination
+    const perPageNum = typeof per_page === 'string' ? parseInt(per_page) : 9;
+    const pageNum = typeof page === 'string' ? parseInt(page) : 1;
+    const perPage = Math.min(perPageNum || 9, 50);
+    const pageNumber = Math.max(pageNum || 1, 1);
+    const skip = (pageNumber - 1) * perPage;
+
+    // Fetch total count and reports
+    const [total, reports] = await Promise.all([
+      db.missingPersonReport.count({ where }),
+      db.missingPersonReport.findMany({
+        where,
+        orderBy,
+        skip,
+        take: perPage,
+        include: {
+          user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        },
+      }),
+    ]);
+
+    const lastPage = Math.ceil(total / perPage) || 1;
 
     const mapped = reports.map((report) => ({
       id: report.id,
@@ -124,8 +209,12 @@ export const getPublished = async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      count: mapped.length,
       reports: mapped,
+      total,
+      per_page: perPage,
+      current_page: pageNumber,
+      last_page: lastPage,
+      count: mapped.length,
     });
   } catch (error) {
     console.error('Error fetching published missing reports:', error);
@@ -259,7 +348,7 @@ export const getMyReports = async (req: Request, res: Response) => {
 
 export const getPending = async (req: Request, res: Response) => {
   try {
-    const { limit = 50 } = req.query;
+    const { limit = '50' } = req.query;
 
     const reports = await db.missingPersonReport.findMany({
       where: {
@@ -270,7 +359,7 @@ export const getPending = async (req: Request, res: Response) => {
         user: { select: { id: true, firstName: true, lastName: true, email: true } },
       },
       orderBy: { createdAt: 'asc' },
-      take: parseInt(limit as string),
+      take: parseInt(typeof limit === 'string' ? limit : '50'),
     });
 
     const mapped = reports.map((report) => ({
@@ -344,7 +433,7 @@ export const approve = async (req: Request, res: Response) => {
         userId: report.userId,
         type: 'report_approved',
         title: 'রিপোর্ট অনুমোদিত হয়েছে ✅',
-        message: `আপনার নিখোঁজ রিপোর্ট "${report.name}" অনুমোদন করা হয়েছে। এটি এখন সার্চ পেজে দেখা যাচ্ছে।`,
+        message: `আপনার নিখোঁজ রিপোর্ট "${report.name}" অনুমোদন করা হয়েছে। এটি এখন সার্চ পেজে প্রদর্শিত হচ্ছে।`,
         reportType: 'missing_person',
         reportId: parseInt(id),
       },

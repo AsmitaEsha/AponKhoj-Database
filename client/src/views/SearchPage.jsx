@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import axios from 'axios';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 import { Link } from 'react-router-dom';
-import {
-    MapPin, Shirt, ArrowRight, SlidersHorizontal,
-    ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen,
-    Search, X, Loader2, User2,
-} from 'lucide-react';
-
+import { MapPin, Shirt, ArrowRight, SlidersHorizontal, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen, Search, X, Loader2 } from 'lucide-react';
+import { getPublishedReports } from '../helpers/missingReportService';
 
 // ── Constants ──────────────────────────────────────────────────────────
 const DISTRICTS = [
@@ -14,10 +12,10 @@ const DISTRICTS = [
     'কুমিল্লা', 'বগুড়া', 'রাজবাড়ী', 'টাঙ্গাইল', 'ফরিদপুর',
     'নোয়াখালী', 'কক্সবাজার', 'যশোর', 'খাগড়াছড়ি', 'পটুয়াখালী',
     'দিনাজপুর', 'রাঙামাটি', 'বান্দরবান', 'নেত্রকোণা', 'শেরপুর',
-    'ঝিনাইদহ', 'মাগুরা', 'নড়াইল', 'চুয়াডাঙ্গা', 'মেহ���রপুর',
+    'ঝিনাইদহ', 'মাগুরা', 'নড়াইল', 'চুয়াডাঙ্গা', 'মেহেরপুর',
     'সাতক্ষীরা', 'বাগেরহাট', 'পিরোজপুর', 'ঝালকাঠি', 'বরগুনা',
     'ভোলা', 'লক্ষ্মীপুর', 'চাঁদপুর', 'ফেনী', 'ব্রাহ্মণবাড়িয়া',
-    'হবিগঞ্জ', 'মৌলভীবাজার', 'সুনামগঞ্জ', 'কিশোরগঞ্জ', 'নরসিংদী',
+    'হবিগঞ্জ', 'মৌলভীবাজার', 'সুনামগঞ্জ', 'কিশোরগঞ্জ', 'নর��িংদী',
     'মানিকগঞ্জ', 'মুন্সিগঞ্জ', 'শরীয়তপুর', 'মাদারীপুর', 'গোপালগঞ্জ',
     'পাবনা', 'সিরাজগঞ্জ', 'নাটোর', 'নওগাঁ', 'জয়পুরহাট',
     'চাঁপাইনবাবগঞ্জ', 'কুষ্টিয়া', 'নীলফামারী', 'লালমনিরহাট',
@@ -125,7 +123,7 @@ const Card = ({ r }) => (
     </div>
 );
 
-// ── Skeleton Component ────────────────────────────────────────────────────
+// ── Skeleton Component ────────────────────────────────────────────────
 const CardSkeleton = () => (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden animate-pulse">
         <div className="h-52 bg-gray-200" />
@@ -252,7 +250,7 @@ export default function SearchPage() {
 
                         {/* Expanded filter panel */}
                         {sidebarOpen && (
-                            <div className="space-y-5 w-56">
+                            <div className="space-y-5 w-56 mt-4">
 
                                 {/* Header */}
                                 <div className="flex items-center justify-between">
@@ -267,7 +265,7 @@ export default function SearchPage() {
                                     </div>
                                     {filterBadgeCount > 0 && (
                                         <button onClick={clearAll} className="text-xs text-secondary hover:underline flex items-center gap-0.5">
-                                            <X size={11} /> সব মুছুন
+                                            <X size={11} /> মুছুন
                                         </button>
                                     )}
                                 </div>
@@ -339,7 +337,7 @@ export default function SearchPage() {
                                     <div className="space-y-2">
                                         <div>
                                             <div className="flex justify-between text-[10px] text-gray-400 mb-1">
-                                                <span>সর্বনিম্ম</span><span>{filters.age_min} বছর</span>
+                                                <span>সর্বনিম্ন</span><span>{filters.age_min} বছর</span>
                                             </div>
                                             <input
                                                 type="range" min="0" max="99" step="1"
@@ -348,7 +346,7 @@ export default function SearchPage() {
                                                     const val = Math.min(+e.target.value, filters.age_max - 1);
                                                     setFilter('age_min', val);
                                                 }}
-                                                className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer"
+                                                className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-primary"
                                             />
                                         </div>
                                         <div>
@@ -362,7 +360,7 @@ export default function SearchPage() {
                                                     const val = Math.max(+e.target.value, filters.age_min + 1);
                                                     setFilter('age_max', val);
                                                 }}
-                                                className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer"
+                                                className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-secondary"
                                             />
                                         </div>
                                     </div>
