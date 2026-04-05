@@ -11,7 +11,10 @@ import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const DISTRICTS = ['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
+const DISTRICTS = [
+    'ঢাকা', 'চট্টগ্রাম', 'সিলেট', 'রাজশাহী', 'খুলনা',
+    'বরিশাল', 'রংপুর', 'ময়মনসিংহ' 
+];
 
 /* ─────── reusable input ─────── */
 const Field = ({ label, icon: Icon, error, children }) => (
@@ -36,8 +39,7 @@ const Avatar = ({ user, size = 'lg' }) => {
         return <img src={user.avatarUrl} alt={user.firstName}
             className={`${sz} rounded-full object-cover border-4 border-white shadow-md`} />;
     }
-    
-    // ✅ FIX: Use firstName and lastName instead of name
+
     const getInitials = () => {
         if (user?.firstName || user?.lastName) {
             const first = user.firstName ? user.firstName[0].toUpperCase() : '';
@@ -46,9 +48,9 @@ const Avatar = ({ user, size = 'lg' }) => {
         }
         return '?';
     };
-    
+
     const initials = getInitials();
-    
+
     return (
         <div className={`${sz} rounded-full bg-primary/10 border-4 border-white shadow-md
                          flex items-center justify-center font-black text-primary`}>
@@ -59,7 +61,7 @@ const Avatar = ({ user, size = 'lg' }) => {
 
 /* ═══════════════════════════════════════════
    TAB: Personal Info
-════��══════════════════════════════════════ */
+═══════════════════════════════════════════ */
 function PersonalInfoTab({ user, updateUser }) {
     const [form, setForm] = useState({
         firstName: user?.firstName || '',
@@ -239,7 +241,7 @@ function PasswordTab() {
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            
+
             if (res.data.success) {
                 setSaved(true);
                 setForm({ current: '', newPass: '', confirm: '' });
@@ -311,110 +313,12 @@ function PasswordTab() {
 }
 
 /* ═══════════════════════════════════════════
-   TAB: Notifications
-═══════════════════════════════════════════ */
-
-/* ═══════════════════════════════════════════
-   TAB: Security
-═══════════════════════════════════════════ */
-function SecurityTab() {
-    const { logout } = useAuth();
-    const navigate = useNavigate();
-
-    const handleDeleteAccount = () => {
-        if (window.confirm('আপনি কি নিশ্চিত যে আপনি আপনার অ্যাকাউন্টটি মুছে ফেলতে চান? এই কাজটি পূর্বাবস্থায় ফেরানো সম্ভব নয়।')) {
-            logout();
-            navigate('/');
-        }
-    };
-
-    return (
-        <div>
-            <h2 className="text-xl font-black text-gray-800 mb-1">নিরাপত্তা</h2>
-            <p className="text-sm text-gray-400 mb-7">আপনার অ্যাকাউন্টের নিরাপত্তা পর্যালোচনা করুন</p>
-
-            <div className="space-y-4">
-                {/* Active sessions */}
-                <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-                    <h3 className="font-bold text-gray-800 text-sm mb-4 flex items-center gap-2">
-                        <Shield size={15} className="text-primary" /> সক্রিয় সেশন
-                    </h3>
-                    <div className="space-y-3">
-                        {[
-                            { device: 'এই ডিভাইস (Chrome — Windows)', time: 'এখন সক্রিয়', current: true },
-                        ].map((s, i) => (
-                            <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                                <div>
-                                    <p className="text-xs font-semibold text-gray-700">{s.device}</p>
-                                    <p className="text-[10px] text-gray-400 mt-0.5">{s.time}</p>
-                                </div>
-                                {s.current
-                                    ? <span className="text-[10px] font-bold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full">বর্তমান</span>
-                                    : <button className="text-[10px] text-red-500 hover:underline">লগআউট</button>}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Two-factor (UI only for now) */}
-                <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h3 className="font-bold text-gray-800 text-sm">দুই-ধাপ যাচাইকরণ</h3>
-                            <p className="text-xs text-gray-400 mt-0.5">অতিরিক্ত নিরাপত্তার জন্য OTP চালু করুন</p>
-                        </div>
-                        <span className="text-[10px] font-bold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full border border-yellow-200">শীঘ্রই আসছে</span>
-                    </div>
-                </div>
-
-                {/* Delete account warning */}
-                <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
-                    <h3 className="font-bold text-red-700 text-sm flex items-center gap-2 mb-1">
-                        <Trash2 size={15} /> অ্যাকাউন্ট মুছে ফেলুন
-                    </h3>
-                    <p className="text-xs text-red-500 mb-3">এই কাজটি পূর্বাবস্থায় ফেরানো সম্ভব নয়। আপনার সমস্ত তথ্য স্থায়ীভাবে মুছে যাবে।</p>
-                    <button 
-                        onClick={handleDeleteAccount}
-                        className="text-xs font-bold text-red-600 border border-red-300 hover:bg-red-100
-                                       px-4 py-2 rounded-lg transition-colors">
-                        অ্যাকাউন্ট মুছুন
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-/* ═══════════════════════════════════════════
-   TAB: My Reports (quick summary)
-═══════════════════════════════════════════ */
-function MyReportsTab() {
-    return (
-        <div>
-            <h2 className="text-xl font-black text-gray-800 mb-1">আমার রিপোর্ট</h2>
-            <p className="text-sm text-gray-400 mb-7">আপনার জমা দেওয়া সব রিপোর্ট এখানে দেখুন</p>
-
-            <div className="text-center py-16 bg-gray-50 rounded-2xl border border-gray-100">
-                <FileText size={36} className="text-gray-200 mx-auto mb-3" />
-                <p className="text-sm font-semibold text-gray-500">এখনো কোনো রিপোর্ট নেই</p>
-                <p className="text-xs text-gray-400 mt-1 mb-5">নিচের বাটন থেকে প্রথম রিপোর্ট জমা দিন</p>
-                <Link to="/report/missing"
-                    className="inline-flex items-center gap-2 bg-primary text-white text-xs font-bold
-                               px-5 py-2.5 rounded-xl hover:bg-primary-dark transition-colors shadow-sm">
-                    + নিখোঁজ রিপোর্ট করুন
-                </Link>
-            </div>
-        </div>
-    );
-}
-
-/* ═══════════════════════════════════════════
    TAB: Help
 ═══════════════════════════════════════════ */
 function HelpTab() {
     const faqs = [
-        { q: 'রিপোর্ট জমা দিতে কত সময় লাগে?', a: 'রিপোর্ট জমা দিতে মাত্র ৫ মিনিট সময় লাগে। সব তথ্য দিলে দ্রুত প্রক্রিয়া সম্পন্ন হয়।' },
-        { q: 'AI ম্যাচিং কীভাবে কাজ করে?', a: 'আমাদের AI ফেস রিকগনিশন সিস্টেম জমা দেওয়��� ছবি বিশ্লেষণ করে এবং ডাটাবেজে থাকা অন্যান্য রিপোর্টের সাথে মিলিয়ে দেখে।' },
+        { q: 'রিপোর্ট জমা দিতে কত সময় লাগে?', a: 'রিপোর্ট জমা দিতে মাত্র ৫ মিনিট সময় লাগে। ���ব তথ্য দিলে দ্রুত প্রক্রিয়া সম্পন্ন হয়।' },
+        { q: 'AI ম্যাচিং কীভাবে কাজ করে?', a: 'আমাদের AI ফেস রিকগনিশন সিস্টেম জমা দেওয়া ছবি বিশ্লেষণ করে এবং ডাটাবেজে থাকা অন্যান্য রিপোর্টের সাথে মিলিয়ে দেখে।' },
         { q: 'আমার ব্যক্তিগত তথ্য কি সুরক্ষিত?', a: 'হ্যাঁ, আমরা আপনার তথ্য সম্পূর্ণ সুরক্ষিত রাখি এবং তৃতীয় পক্ষের সাথে শেয়ার করি না।' },
         { q: 'কোনো সাফল্যের গল্প আছে কি?', a: 'হ্যাঁ, আমাদের প্ল্যাটফর্মের মাধ্যমে ইতিমধ্যে বেশ কিছু পরিবার পুনর্মিলিত হয়েছে।' },
     ];
@@ -462,8 +366,6 @@ function HelpTab() {
 const TABS = [
     { id: 'profile', label: 'ব্যক্তিগত তথ্য', icon: User, Component: PersonalInfoTab },
     { id: 'password', label: 'পাসওয়ার্ড', icon: Key, Component: PasswordTab },
-    { id: 'reports', label: 'আমার রিপোর্ট', icon: FileText, Component: MyReportsTab },
-    { id: 'security', label: 'নিরাপত্তা', icon: Shield, Component: SecurityTab },
     { id: 'help', label: 'সহায়তা', icon: HelpCircle, Component: HelpTab },
 ];
 
@@ -479,7 +381,7 @@ export default function UserProfilePage() {
 
     // Update both state and URL when switching tabs
     const setActiveTab = (id) => setSearchParams({ tab: id }, { replace: true });
-    const [sidebarOpen, setSidebarOpen] = useState(false); // mobile sidebar toggle
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     // Redirect to login if not authenticated
     if (!isAuthenticated) {
@@ -548,30 +450,30 @@ export default function UserProfilePage() {
                             </div>
                         </div>
 
-                        {/* Nav links */}
-                        <nav className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex-1">
+                        {/* Nav links - COMPACT VERSION */}
+                        <nav className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                             {TABS.map(tab => (
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`flex items-center gap-3 w-full px-4 py-3.5 text-left text-sm
+                                    className={`flex items-center gap-3 w-full px-4 py-2.5 text-left text-xs
                                                 transition-all border-b border-gray-50 last:border-0
                                                 ${activeTab === tab.id
                                             ? 'bg-primary/5 text-primary font-bold border-l-2 border-l-primary'
                                             : 'text-gray-600 hover:bg-gray-50 font-medium'}`}
                                 >
-                                    <tab.icon size={15} className="flex-shrink-0" />
+                                    <tab.icon size={14} className="flex-shrink-0" />
                                     {tab.label}
-                                    {activeTab === tab.id && <ChevronRight size={13} className="ml-auto" />}
+                                    {activeTab === tab.id && <ChevronRight size={12} className="ml-auto" />}
                                 </button>
                             ))}
 
                             {/* Logout */}
                             <button
                                 onClick={handleLogout}
-                                className="flex items-center gap-3 w-full px-4 py-3.5 text-left text-sm
+                                className="flex items-center gap-3 w-full px-4 py-2.5 text-left text-xs
                                            text-red-500 hover:bg-red-50 font-medium transition-colors border-t border-gray-100">
-                                <LogOut size={15} className="flex-shrink-0" />
+                                <LogOut size={14} className="flex-shrink-0" />
                                 লগআউট
                             </button>
                         </nav>
@@ -594,8 +496,8 @@ export default function UserProfilePage() {
                                         className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg
                                                     whitespace-nowrap flex-shrink-0 transition-all
                                                     ${activeTab === tab.id
-                                                ? 'bg-primary text-white shadow-sm'
-                                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>
+                                            ? 'bg-primary text-white shadow-sm'
+                                            : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>
                                         <tab.icon size={12} /> {tab.label}
                                     </button>
                                 ))}
@@ -614,20 +516,9 @@ export default function UserProfilePage() {
                             <ActiveComp user={user} updateUser={updateUser} />
                         </div>
 
-                        {/* Quick links */}
+                        {/* Quick links - optional */}
                         <div className="grid grid-cols-2 gap-3 mt-4">
-                            <Link to="/dashboard"
-                                className="flex items-center gap-2 bg-white border border-gray-100 rounded-2xl
-                                           p-4 text-sm font-semibold text-gray-700 hover:border-primary hover:text-primary
-                                           shadow-sm transition-all">
-                                <Settings size={15} /> ড্যাশবোর্ড
-                            </Link>
-                            <Link to="/report/missing"
-                                className="flex items-center gap-2 bg-white border border-gray-100 rounded-2xl
-                                           p-4 text-sm font-semibold text-gray-700 hover:border-secondary hover:text-secondary
-                                           shadow-sm transition-all">
-                                <FileText size={15} /> নতুন রিপোর্ট
-                            </Link>
+                            {/* Quick links can be added here if needed */}
                         </div>
                     </main>
 

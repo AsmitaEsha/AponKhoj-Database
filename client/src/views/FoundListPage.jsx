@@ -134,7 +134,7 @@ export default function FoundListPage() {
                         <span className="text-gray-300">{r.foundDate}</span>
                     </div>
                 </div>
-                <Link to={`/emergency/${r.id}`}
+                <Link to={`/report/f-${r.id}`}
                     className="flex items-center justify-center gap-1.5 w-full border border-accent-teal text-accent-teal text-xs py-2 rounded-xl hover:bg-accent-teal hover:text-white transition-colors font-medium">
                     বিস্তারিত দেখুন <ArrowRight size={12} />
                 </Link>
