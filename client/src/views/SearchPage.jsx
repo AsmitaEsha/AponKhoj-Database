@@ -41,10 +41,7 @@ export default function SearchPage() {
     useEffect(() => {
         const fetchAll = async () => {
             try {
-                const [missingRes, foundRes] = await Promise.all([
-                    axios.get(`${API_URL}/missing-reports/published`),
-                    axios.get(`${API_URL}/found-reports/published`)
-                ]);
+                const missingRes = await axios.get(`${API_URL}/missing-reports/published`);
                 
                 const missing = (missingRes.data.reports || []).map(r => ({
                     id: `m-${r.id}`,
@@ -61,22 +58,7 @@ export default function SearchPage() {
                     seed: r.name
                 }));
 
-                const found = (foundRes.data.reports || []).map(r => ({
-                    id: `f-${r.id}`,
-                    origId: r.id,
-                    type: 'found',
-                    name: r.name,
-                    age: r.age || 0,
-                    gender: r.gender || 'unknown',
-                    district: r.district,
-                    date: r.foundDate,
-                    status: 'found',
-                    clothing: r.clothingDescription || 'অজানা',
-                    photoUrl: r.photoUrl,
-                    seed: r.name
-                }));
-
-                setReports([...missing, ...found].sort((a, b) => new Date(b.date) - new Date(a.date)));
+                setReports(missing.sort((a, b) => new Date(b.date) - new Date(a.date)));
             } catch (err) {
                 console.error("Failed to load reports", err);
             } finally {
@@ -229,7 +211,7 @@ export default function SearchPage() {
                                 <div>
                                     <p className="text-xs font-bold text-gray-600 mb-2">বর্তমান অবস্থা</p>
                                     <div className="grid grid-cols-3 gap-1 bg-gray-100 p-1 rounded-xl">
-                                        {['সব', 'নিখোঁজ', 'পাওয়া গেছে'].map(s => (
+                                        {['সব', 'নিখোঁজ'].map(s => (
                                             <button key={s}
                                                 onClick={() => { setStatusFilter(s); setPage(1); }}
                                                 className={`text-[10px] py-1.5 rounded-lg font-medium transition-all ${statusFilter === s ? 'bg-white shadow text-primary' : 'text-gray-500'}`}>

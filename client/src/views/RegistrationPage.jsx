@@ -23,7 +23,6 @@ const RegistrationPage = () => {
     const handleRegister = async (e) => {
         e.preventDefault();
 
-        // Validation
         if (!form.firstName.trim() || !form.lastName.trim()) {
             toast.error('নাম সঠিকভাবে প্রবেশ করুন');
             return;
@@ -75,7 +74,7 @@ const RegistrationPage = () => {
                     <p className="text-gray-500 text-sm mt-1">নতুন অ্যাকাউন্ট তৈরি করুন</p>
                 </div>
 
-                <form onSubmit={handleRegister} className="space-y-4">
+                <form onSubmit={handleRegister} className="space-y-4" autoComplete="off">
                     {/* First Name */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">প্রথম নাম</label>
@@ -88,6 +87,7 @@ const RegistrationPage = () => {
                                 value={form.firstName}
                                 onChange={handleChange}
                                 required
+                                autoComplete="off"
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                             />
                         </div>
@@ -105,6 +105,7 @@ const RegistrationPage = () => {
                                 value={form.lastName}
                                 onChange={handleChange}
                                 required
+                                autoComplete="off"
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                             />
                         </div>
@@ -122,6 +123,7 @@ const RegistrationPage = () => {
                                 value={form.email}
                                 onChange={handleChange}
                                 required
+                                autoComplete="off"
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                             />
                         </div>
@@ -139,6 +141,7 @@ const RegistrationPage = () => {
                                 value={form.phone}
                                 onChange={handleChange}
                                 required
+                                autoComplete="off"
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                             />
                         </div>
@@ -157,6 +160,7 @@ const RegistrationPage = () => {
                                 value={form.location}
                                 onChange={handleChange}
                                 required
+                                autoComplete="off"
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                             />
                         </div>
@@ -174,6 +178,7 @@ const RegistrationPage = () => {
                                 value={form.password}
                                 onChange={handleChange}
                                 required
+                                autoComplete="new-password"
                                 className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                             />
                             <button
@@ -185,7 +190,7 @@ const RegistrationPage = () => {
                             </button>
                         </div>
                         <p className="text-xs text-gray-400 mt-1">
-                            ৮+ অক্ষর, ১ বড়, ১ ছোট, ১ নম্বর, ১ ব��শেষ চিহ্ন (@$!%*?&)
+                            ৮+ অক্ষর, ১ বড়, ১ ছোট, ১ নম্বর, ১ বিশেষ চিহ্ন (@$!%*?&)
                         </p>
                     </div>
 
@@ -201,6 +206,7 @@ const RegistrationPage = () => {
                                 value={form.password_confirmation}
                                 onChange={handleChange}
                                 required
+                                autoComplete="new-password"
                                 className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                             />
                             <button
