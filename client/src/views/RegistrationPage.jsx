@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Lock, Eye, EyeOff, Search, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const DISTRICTS = ['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
+
 const RegistrationPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -12,7 +14,7 @@ const RegistrationPage = () => {
         lastName: '',
         email: '',
         phone: '',
-        location: '',
+        district: '',
         password: '',
         password_confirmation: ''
     });
@@ -29,6 +31,11 @@ const RegistrationPage = () => {
             return;
         }
 
+        if (!form.district) {
+            toast.error('জেলা নির্বাচন করুন');
+            return;
+        }
+
         if (form.password !== form.password_confirmation) {
             toast.error('পাসওয়ার্ড এবং নিশ্চিত পাসওয়ার্ড মিলছে না');
             return;
@@ -40,7 +47,11 @@ const RegistrationPage = () => {
             const resp = await fetch('http://localhost:5000/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form),
+                body: JSON.stringify({
+                    ...form,
+                    location: form.district,
+                    district: form.district,
+                }),
             });
 
             const data = await resp.json();
@@ -150,15 +161,18 @@ const RegistrationPage = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">জেলা/অবস্থান</label>
                         <div className="relative">
                             <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input
-                                type="text"
-                                name="location"
-                                placeholder="জেলা নির্বাচন করুন"
-                                value={form.location}
+                            <select
+                                name="district"
+                                value={form.district}
                                 onChange={handleChange}
                                 required
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                            />
+                            >
+                                <option value="">জেলা নির্বাচন করুন</option>
+                                {DISTRICTS.map(d => (
+                                    <option key={d} value={d}>{d}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 

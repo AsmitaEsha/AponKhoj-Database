@@ -34,6 +34,9 @@ export function AuthProvider({ children }) {
 
     const login = (userData, authToken) => {
         console.log('🔐 AuthContext: Login called with:', userData);
+
+        const normalizedDistrict = userData.district || userData.location || '';
+        const normalizedLocation = userData.location || normalizedDistrict;
         
         const userWithRole = {
             role: userData.role || 'user',
@@ -41,7 +44,9 @@ export function AuthProvider({ children }) {
             lastName: userData.lastName || '',
             email: userData.email || '',
             phone: userData.phone || '',
-            location: userData.location || '',
+            district: normalizedDistrict,
+            location: normalizedLocation,
+            avatarUrl: userData.avatarUrl || '',
             id: userData.id,
             ...userData
         };
