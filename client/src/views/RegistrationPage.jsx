@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Lock, Eye, EyeOff, Search, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const DISTRICTS = ['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
+
 const RegistrationPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -12,7 +14,7 @@ const RegistrationPage = () => {
         lastName: '',
         email: '',
         phone: '',
-        location: '',
+        district: '',
         password: '',
         password_confirmation: ''
     });
@@ -23,9 +25,13 @@ const RegistrationPage = () => {
     const handleRegister = async (e) => {
         e.preventDefault();
 
-        // Validation
         if (!form.firstName.trim() || !form.lastName.trim()) {
             toast.error('নাম সঠিকভাবে প্রবেশ করুন');
+            return;
+        }
+
+        if (!form.district) {
+            toast.error('জেলা নির্বাচন করুন');
             return;
         }
 
@@ -40,7 +46,11 @@ const RegistrationPage = () => {
             const resp = await fetch('http://localhost:5000/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form),
+                body: JSON.stringify({
+                    ...form,
+                    location: form.district,
+                    district: form.district,
+                }),
             });
 
             const data = await resp.json();
@@ -75,7 +85,7 @@ const RegistrationPage = () => {
                     <p className="text-gray-500 text-sm mt-1">নতুন অ্যাকাউন্ট তৈরি করুন</p>
                 </div>
 
-                <form onSubmit={handleRegister} className="space-y-4">
+                <form onSubmit={handleRegister} className="space-y-4" autoComplete="off">
                     {/* First Name */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">প্রথম নাম</label>
@@ -88,6 +98,7 @@ const RegistrationPage = () => {
                                 value={form.firstName}
                                 onChange={handleChange}
                                 required
+                                autoComplete="off"
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                             />
                         </div>
@@ -105,6 +116,7 @@ const RegistrationPage = () => {
                                 value={form.lastName}
                                 onChange={handleChange}
                                 required
+                                autoComplete="off"
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                             />
                         </div>
@@ -122,6 +134,7 @@ const RegistrationPage = () => {
                                 value={form.email}
                                 onChange={handleChange}
                                 required
+                                autoComplete="off"
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                             />
                         </div>
@@ -139,6 +152,7 @@ const RegistrationPage = () => {
                                 value={form.phone}
                                 onChange={handleChange}
                                 required
+                                autoComplete="off"
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                             />
                         </div>
@@ -150,15 +164,19 @@ const RegistrationPage = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">জেলা/অবস্থান</label>
                         <div className="relative">
                             <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input
-                                type="text"
-                                name="location"
-                                placeholder="জেলা নির্বাচন করুন"
-                                value={form.location}
+                            <select
+                                name="district"
+                                value={form.district}
                                 onChange={handleChange}
                                 required
+                                autoComplete="off"
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                            />
+                            >
+                                <option value="">জেলা নির্বাচন করুন</option>
+                                {DISTRICTS.map(d => (
+                                    <option key={d} value={d}>{d}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 
@@ -174,6 +192,7 @@ const RegistrationPage = () => {
                                 value={form.password}
                                 onChange={handleChange}
                                 required
+                                autoComplete="new-password"
                                 className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                             />
                             <button
@@ -185,7 +204,7 @@ const RegistrationPage = () => {
                             </button>
                         </div>
                         <p className="text-xs text-gray-400 mt-1">
-                            ৮+ অক্ষর, ১ বড়, ১ ছোট, ১ নম্বর, ১ ব��শেষ চিহ্ন (@$!%*?&)
+                            ৮+ অক্ষর, ১ বড়, ১ ছোট, ১ নম্বর, ১ বিশেষ চিহ্ন (@$!%*?&)
                         </p>
                     </div>
 
@@ -201,6 +220,7 @@ const RegistrationPage = () => {
                                 value={form.password_confirmation}
                                 onChange={handleChange}
                                 required
+                                autoComplete="new-password"
                                 className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                             />
                             <button

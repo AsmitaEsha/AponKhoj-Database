@@ -11,6 +11,7 @@ import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const DISTRICTS = ['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
 
 /* ─────── reusable input ─────── */
 const Field = ({ label, icon: Icon, error, children }) => (
@@ -64,12 +65,13 @@ function PersonalInfoTab({ user, updateUser }) {
         firstName: user?.firstName || '',
         lastName: user?.lastName || '',
         phone: user?.phone || '',
-        location: user?.location || '',
+        district: user?.district || user?.location || '',
     });
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [avatar, setAvatar] = useState(user?.avatarUrl || null);
+    const [avatarFile, setAvatarFile] = useState(null);
     const fileRef = useRef();
 
     const handleChange = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
@@ -78,6 +80,7 @@ function PersonalInfoTab({ user, updateUser }) {
         const file = e.target.files[0];
         if (!file) return;
         const url = URL.createObjectURL(file);
+        setAvatarFile(file);
         setAvatar(url);
     };
 
@@ -87,7 +90,10 @@ function PersonalInfoTab({ user, updateUser }) {
         if (!form.firstName.trim()) newErrors.firstName = 'প্রথম নাম আবশ্যক';
         if (!form.lastName.trim()) newErrors.lastName = 'শেষ নাম আবশ্যক';
         if (!form.phone.trim()) newErrors.phone = 'ফোন নম্বর আবশ্যক';
-        if (!form.location) newErrors.location = 'জেলা নির্বাচন করুন';
+        if (!/^01[0-9]{9}$/.test(form.phone.replace(/\s+/g, ''))) {
+            newErrors.phone = 'সঠিক ফোন নম্বর দিন (01XXXXXXXXX)';
+        }
+        if (!form.district) newErrors.district = 'জেলা নির্বাচন করুন';
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -98,11 +104,29 @@ function PersonalInfoTab({ user, updateUser }) {
         setSaving(true);
         try {
             const token = localStorage.getItem('aponkhoj_token');
-            const res = await axios.put(`${API_URL}/user/profile/me`, form, {
+            const payload = new FormData();
+            payload.append('firstName', form.firstName.trim());
+            payload.append('lastName', form.lastName.trim());
+            payload.append('phone', form.phone.replace(/\s+/g, ''));
+            payload.append('district', form.district);
+            if (avatarFile) {
+                payload.append('avatar', avatarFile);
+            }
+
+            const res = await axios.put(`${API_URL}/users/profile/me`, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+
             if (res.data.success) {
-                updateUser({ ...form, avatarUrl: avatar });
+                updateUser(res.data.user);
+                setForm({
+                    firstName: res.data.user.firstName || '',
+                    lastName: res.data.user.lastName || '',
+                    phone: res.data.user.phone || '',
+                    district: res.data.user.district || res.data.user.location || '',
+                });
+                setAvatar(res.data.user.avatarUrl || null);
+                setAvatarFile(null);
                 setSaved(true);
                 toast.success('প্রোফাইল সফলভাবে আপডেট হয়েছে');
                 setTimeout(() => setSaved(false), 3000);
@@ -164,10 +188,13 @@ function PersonalInfoTab({ user, updateUser }) {
                         onChange={handleChange} placeholder="01XXXXXXXXX" type="tel" />
                 </Field>
 
-                <Field label="জেলা / অবস্থান" icon={MapPin} error={errors.location}>
-                    <select className={inputCls(true, !!errors.location)} name="location" value={form.location} onChange={handleChange}>
+                <Field label="জেলা / অবস্থান" icon={MapPin} error={errors.district}>
+                    <select className={inputCls(true, !!errors.district)} name="district" value={form.district} onChange={handleChange}>
                         <option value="">জেলা নির্বাচন করুন</option>
-                        {['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'].map(d =>
+                        {form.district && !DISTRICTS.includes(form.district) && (
+                            <option value={form.district}>{form.district}</option>
+                        )}
+                        {DISTRICTS.map(d =>
                             <option key={d} value={d}>{d}</option>
                         )}
                     </select>
@@ -206,7 +233,7 @@ function PasswordTab() {
         setSaving(true);
         try {
             const token = localStorage.getItem('aponkhoj_token');
-            const res = await axios.put(`${API_URL}/user/profile/password`, {
+            const res = await axios.put(`${API_URL}/users/profile/password`, {
                 currentPassword: form.current,
                 newPassword: form.newPass
             }, {
@@ -507,10 +534,10 @@ export default function UserProfilePage() {
                                 <Avatar user={user} size="lg" />
                                 <p className="font-black text-gray-800 mt-3 text-sm">{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.firstName || '—'}</p>
                                 <p className="text-xs text-gray-400 mt-0.5 break-all">{user?.email || '—'}</p>
-                                {user?.location && (
+                                {(user?.district || user?.location) && (
                                     <span className="inline-flex items-center gap-1 text-[10px] text-primary
                                                      bg-primary/5 px-2 py-0.5 rounded-full mt-2">
-                                        <MapPin size={9} /> {user.location}
+                                        <MapPin size={9} /> {user.district || user.location}
                                     </span>
                                 )}
                                 {user?.joinDate && (

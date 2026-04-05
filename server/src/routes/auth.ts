@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db.js';
 import { hashPassword, comparePassword, generateToken } from '../utils/auth.js';
-import { validateEmail, validatePassword, validatePhone, validateName, validateLocation } from '../utils/validators.js';
+import { validateEmail, validatePassword, validatePhone, validateName, validateLocation, getPasswordValidationError } from '../utils/validators.js';
 import { isAdminCredential } from '../utils/adminConfig.js';
 
 const router = Router();
@@ -15,27 +15,42 @@ const ADMIN_EMAILS = [
 
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { firstName, lastName, email, phone, location, password, password_confirmation } = req.body;
+    const { firstName, lastName, email, phone, location, district, password, password_confirmation } = req.body;
 
-    if (!firstName || !lastName || !email || !phone || !location || !password) {
+    const trimmedFirstName = firstName?.trim?.();
+    const trimmedLastName = lastName?.trim?.();
+    const normalizedEmail = email?.toLowerCase?.();
+    const normalizedPhone = phone?.replace?.(/\s+/g, '');
+    const normalizedDistrict = (district || location || '').trim();
+
+    if (!trimmedFirstName || !trimmedLastName || !normalizedEmail || !normalizedPhone || !normalizedDistrict || !password) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    if (!validateEmail(email)) {
+    if (!validateName(trimmedFirstName) || !validateName(trimmedLastName)) {
+      return res.status(400).json({ error: 'Invalid name' });
+    }
+
+    if (!validateEmail(normalizedEmail)) {
       return res.status(400).json({ error: 'Invalid email format' });
     }
 
-    if (!validatePhone(phone)) {
+    if (!validatePhone(normalizedPhone)) {
       return res.status(400).json({ error: 'Invalid phone number' });
     }
 
+    if (!validateLocation(normalizedDistrict)) {
+      return res.status(400).json({ error: 'Invalid district' });
+    }
+
     // NEW: Check if email is an admin email
-    if (ADMIN_EMAILS.includes(email.toLowerCase())) {
+    if (ADMIN_EMAILS.includes(normalizedEmail)) {
       return res.status(409).json({ error: 'This email is reserved for admin use and cannot be registered' });
     }
 
     if (!validatePassword(password)) {
-      return res.status(400).json({ error: 'Password too weak' });
+      const passwordError = getPasswordValidationError(password) || 'Password is too weak';
+      return res.status(400).json({ error: passwordError });
     }
 
     if (password !== password_confirmation) {
@@ -45,8 +60,8 @@ router.post('/register', async (req: Request, res: Response) => {
     const existingUser = await db.user.findFirst({
       where: {
         OR: [
-          { email: email.toLowerCase() },
-          { phone }
+          { email: normalizedEmail },
+          { phone: normalizedPhone }
         ]
       }
     });
@@ -59,11 +74,12 @@ router.post('/register', async (req: Request, res: Response) => {
 
     const user = await db.user.create({
       data: {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        email: email.toLowerCase(),
-        phone,
-        location: location.trim(),
+        firstName: trimmedFirstName,
+        lastName: trimmedLastName,
+        email: normalizedEmail,
+        phone: normalizedPhone,
+        location: normalizedDistrict,
+        district: normalizedDistrict,
         password: hashedPassword,
         role: 'user'
       }
@@ -79,6 +95,10 @@ router.post('/register', async (req: Request, res: Response) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
+        phone: user.phone,
+        district: user.district,
+        location: user.location,
+        avatarUrl: user.avatarUrl,
         role: user.role
       }
     });
@@ -103,6 +123,9 @@ router.post('/login', async (req: Request, res: Response) => {
       let adminUser = await db.user.findUnique({ where: { email: email.toLowerCase() } });
       
       if (!adminUser) {
+        const adminIndex = Math.max(ADMIN_EMAILS.findIndex(adminEmail => adminEmail === email.toLowerCase()), 0);
+        const adminPhone = `019${String(adminIndex + 1).padStart(8, '0')}`;
+
         // Create the admin record if it doesn't exist
         const hashedPassword = await hashPassword(password);
         adminUser = await db.user.create({
@@ -110,8 +133,9 @@ router.post('/login', async (req: Request, res: Response) => {
             firstName: 'Admin',
             lastName: 'User',
             email: email.toLowerCase(),
-            phone: '0000000000', // Placeholder
+            phone: adminPhone,
             location: 'System',
+            district: 'System',
             password: hashedPassword,
             role: 'admin'
           }
@@ -127,6 +151,10 @@ router.post('/login', async (req: Request, res: Response) => {
           firstName: adminUser.firstName,
           lastName: adminUser.lastName,
           email: adminUser.email,
+          phone: adminUser.phone,
+          district: adminUser.district,
+          location: adminUser.location,
+          avatarUrl: adminUser.avatarUrl,
           role: 'admin'
         }
       });
@@ -156,6 +184,10 @@ router.post('/login', async (req: Request, res: Response) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
+        phone: user.phone,
+        district: user.district,
+        location: user.location,
+        avatarUrl: user.avatarUrl,
         role: user.role
       }
     });

@@ -47,14 +47,35 @@ export const validatePhone = (phone: string): boolean => {
 };
 
 export const validatePassword = (password: string): boolean => {
-  // Minimum 6 characters, at least 1 number
-  if (password.length < 6) {
-    return false;
+  return getPasswordValidationError(password) === null;
+};
+
+export const getPasswordValidationError = (password: string): string | null => {
+  if (!password || password.length < 8) {
+    return 'Password must be at least 8 characters long';
   }
+
+  if (!/[a-z]/.test(password)) {
+    return 'Password must contain at least one lowercase letter';
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    return 'Password must contain at least one uppercase letter';
+  }
+
   if (!/\d/.test(password)) {
-    return false;
+    return 'Password must contain at least one number';
   }
-  return true;
+
+  if (!/[!@#$%^&*(),.?":{}|<>_\-+=/\\\[\]~`]/.test(password)) {
+    return 'Password must contain at least one special character';
+  }
+
+  if (/\s/.test(password)) {
+    return 'Password cannot contain spaces';
+  }
+
+  return null;
 };
 
 export const validateName = (name: string): boolean => {

@@ -1,6 +1,7 @@
 import { db } from '../db.js';
 import { Request, Response } from 'express';
 import { CloudinaryService } from '../services/cloudinaryService.js';
+import { matchFoundWithMissing } from '../services/aiMatchingService.js';
 
 const cloudinaryService = new CloudinaryService();
 
@@ -73,6 +74,53 @@ export const store = async (req: Request, res: Response) => {
       },
     });
 
+    const missingReports = await db.missingPersonReport.findMany({
+      where: { approved: true, status: 'published' },
+      select: {
+        id: true,
+        name: true,
+        age: true,
+        gender: true,
+        height: true,
+        district: true,
+        address: true,
+        clothingDescription: true,
+        additionalInfo: true,
+        contactPersonName: true,
+        contactPhone: true,
+        photoUrl: true,
+        lastSeenDate: true,
+      },
+    });
+
+    const aiResult = await matchFoundWithMissing(
+      {
+        name,
+        age: age ? parseInt(age) : null,
+        gender,
+        height,
+        district,
+        address,
+        clothingDescription,
+        additionalInfo,
+      },
+      missingReports
+    );
+
+    // Save match to database if found
+    if (aiResult.matched && aiResult.matchedReport) {
+      await db.match.create({
+        data: {
+          foundReportId: report.id,
+          missingReportId: aiResult.matchedReport.id,
+          matchType: 'ai_match',
+          similarityScore: aiResult.confidence || 0,
+          matchStatus: 'pending',
+          notes: aiResult.reason,
+        },
+      });
+    }
+
     res.status(201).json({
       success: true,
       message: 'Report submitted successfully. It will be reviewed by our team.',
@@ -81,6 +129,24 @@ export const store = async (req: Request, res: Response) => {
         status: report.status,
         approved: report.approved,
       },
+      aiMatch: aiResult.matched
+        ? {
+            matched: true,
+            confidence: aiResult.confidence,
+            reason: aiResult.reason,
+            missingReport: {
+              id: aiResult.matchedReport!.id,
+              name: aiResult.matchedReport!.name,
+              age: aiResult.matchedReport!.age,
+              gender: aiResult.matchedReport!.gender,
+              district: aiResult.matchedReport!.district,
+              contactPersonName: aiResult.matchedReport!.contactPersonName,
+              contactPhone: aiResult.matchedReport!.contactPhone,
+              photoUrl: aiResult.matchedReport!.photoUrl,
+              lastSeenDate: aiResult.matchedReport!.lastSeenDate,
+            },
+          }
+        : { matched: false },
     });
   } catch (error) {
     console.error('Error creating found person report:', error);
