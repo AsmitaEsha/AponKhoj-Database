@@ -1,15 +1,22 @@
 import dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });
 
 import express from 'express';
 import cors from 'cors';
-import authRouter from './routes/auth.js';  
+import authRouter from './routes/auth.js';
 import userRouter from './routes/user.js';
 import missingPersonRouter from './routes/missingPersonReports.js';
 import foundPersonRouter from './routes/foundPersonReports.js';
 import reportRouter from './routes/reports.js';
 import adminRouter from './routes/admin.js';
 import notificationRouter from './routes/notifications.js';
+import contactRouter from './routes/contact.js'; 
 import { db } from './db.js';
 
 const app = express();
@@ -36,17 +43,19 @@ app.get('/', (req, res) => {
 });
 
 // Routes
-app.use('/auth', authRouter);  // Check this line
+app.use('/auth', authRouter);
 app.use('/api/users', userRouter);
 app.use('/api/missing-reports', missingPersonRouter);
 app.use('/api/found-reports', foundPersonRouter);
 app.use('/api/reports', reportRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/notifications', notificationRouter);
+app.use('/api/contact', contactRouter); 
 
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📧 Missing/Found Reports API enabled`);
   console.log(`👨‍💼 Admin features enabled`);
+  console.log(`✉️  Contact email API enabled`);
 });
