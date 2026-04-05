@@ -107,6 +107,20 @@ export const store = async (req: Request, res: Response) => {
       missingReports
     );
 
+    // Save match to database if found
+    if (aiResult.matched && aiResult.matchedReport) {
+      await db.match.create({
+        data: {
+          foundReportId: report.id,
+          missingReportId: aiResult.matchedReport.id,
+          matchType: 'ai_match',
+          similarityScore: aiResult.confidence || 0,
+          matchStatus: 'pending',
+          notes: aiResult.reason,
+        },
+      });
+    }
+
     res.status(201).json({
       success: true,
       message: 'Report submitted successfully. It will be reviewed by our team.',

@@ -70,6 +70,7 @@ model MissingPersonReport {
   updatedAt             DateTime  @updatedAt
 
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matches               Match[]   @relation("MissingMatches")
 
   @@index([userId])
   @@index([status])
@@ -102,6 +103,7 @@ model FoundPersonReport {
   updatedAt             DateTime  @updatedAt
 
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matches               Match[]   @relation("FoundMatches")
 
   @@index([userId])
   @@index([status])
@@ -164,4 +166,29 @@ model Notification {
   @@index([isRead])
   @@index([createdAt(sort: Desc)])
   @@map("notifications")
+}
+
+model Match {
+  id                    Int       @id @default(autoincrement())
+  foundReportId         Int
+  missingReportId       Int
+  matchType             String    // 'ai_match' | 'admin_verified' | 'user_reported'
+  similarityScore       Decimal   @db.Decimal(5, 2) // 0-100
+  matchStatus           String    @default("pending") // 'pending' | 'verified' | 'rejected' | 'reunited'
+  notes                 String?
+  matchedAt             DateTime  @default(now())
+  reunitedat            DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  foundReport           FoundPersonReport   @relation("FoundMatches", fields: [foundReportId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  missingReport         MissingPersonReport @relation("MissingMatches", fields: [missingReportId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([foundReportId, missingReportId])
+  @@index([foundReportId])
+  @@index([missingReportId])
+  @@index([matchStatus])
+  @@index([matchType])
+  @@index([matchedAt(sort: Desc)])
+  @@map("matches")
 }
