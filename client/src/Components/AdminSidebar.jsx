@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Settings, LogOut,
-    Flag, ChevronRight, Menu, X, AlertTriangle
+    Flag, ChevronRight, Menu, X, Trophy
 } from 'lucide-react';
 import { useAuth } from '../helpers/AuthContext';
 
@@ -12,6 +12,7 @@ export function AdminSidebar({ active, onNav, collapsed, onToggle }) {
     const NAV = [
         { id: 'overview',       label: 'ওভারভিউ',          icon: LayoutDashboard, path: '/admin/dashboard' },
         { id: 'moderation',     label: 'মডারেশন',           icon: Flag,            path: '/admin/moderation' },
+        { id: 'successStories', label: 'সাফল্যের গল্প',    icon: Trophy,          path: '/admin/dashboard?tab=successStories' },
         { id: 'profile',        label: 'প্রোফাইল সেটিংস',  icon: Settings,        path: '/admin/profile' },
     ];
 

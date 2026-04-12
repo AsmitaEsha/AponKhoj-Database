@@ -246,6 +246,7 @@ const Navbar = () => {
         { to: '/search-page', label: 'নিখোঁজ তালিকা' },
         { to: '/found', label: 'উদ্ধারকৃত তালিকা' },
         { to: '/about', label: 'আমাদের সম্পর্কে' },
+         { to: '/success-stories', label: 'সাফল্যের গল্প' },
         { to: '/contact', label: 'যোগাযোগ' },
     ];
 

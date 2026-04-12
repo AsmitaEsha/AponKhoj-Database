@@ -19,6 +19,7 @@ import HelpPage from './views/HelpPage';
 import FoundListPage from './views/FoundListPage';
 import AboutPage from './views/AboutPage';
 import SuccessStoriesPage from './views/SuccessStoriesPage';
+import SuccessStoryDetailPage from './views/SuccessStoryDetailPage';
 import ReportMissingPage from './views/ReportMissingPage';
 import './index.css';
 import { Toaster } from 'react-hot-toast';
@@ -55,6 +56,7 @@ function AppShell() {
           <Route path="/report-found" element={<ReportFoundPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/success-stories" element={<SuccessStoriesPage />} />
+          <Route path="/success-stories/:id" element={<SuccessStoryDetailPage />} />
           <Route path="/report-missing" element={<ReportMissingPage />} />
           <Route path="/legal-aid" element={<LegalAidPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
