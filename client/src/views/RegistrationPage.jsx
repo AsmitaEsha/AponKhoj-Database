@@ -45,15 +45,17 @@ const RegistrationPage = () => {
 
     // Fetch districts when division changes
     useEffect(() => {
-        if (selectedDivisionId) {
-            const division = divisions.find(d => d.id === parseInt(selectedDivisionId));
-            if (division && division.districts) {
-                setDistricts(division.districts);
-            }
-        } else {
-            setDistricts([]);
-        }
-        setForm(p => ({ ...p, district: '', districtId: '' }));
+        const nextDistricts = selectedDivisionId
+            ? (divisions.find(d => d.id === parseInt(selectedDivisionId))?.districts || [])
+            : divisions.flatMap(d => d.districts || []);
+
+        setDistricts(nextDistricts);
+
+        // Keep selected district if it is still visible; otherwise clear it.
+        setForm(p => {
+            const stillExists = nextDistricts.some(d => d.id === parseInt(p.districtId || '0'));
+            return stillExists ? p : { ...p, district: '', districtId: '' };
+        });
     }, [selectedDivisionId, divisions]);
 
     const handleChange = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
@@ -228,10 +230,9 @@ const RegistrationPage = () => {
                                     value={selectedDivisionId}
                                     onChange={handleDivisionChange}
                                     disabled={loadingDivisions}
-                                    required
                                     className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100"
                                 >
-                                    <option value="">বিভাগ নির্বাচন</option>
+                                    <option value="">সব বিভাগ</option>
                                     {divisions.map(d => (
                                         <option key={d.id} value={d.id}>{d.name}</option>
                                     ))}
@@ -247,7 +248,7 @@ const RegistrationPage = () => {
                                 <select
                                     value={form.districtId}
                                     onChange={handleDistrictChange}
-                                    disabled={!selectedDivisionId || districts.length === 0}
+                                    disabled={loadingDivisions || districts.length === 0}
                                     required
                                     className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100"
                                 >
