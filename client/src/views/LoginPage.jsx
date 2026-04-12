@@ -27,6 +27,12 @@ const LoginPage = () => {
             const data = await resp.json();
 
             if (!resp.ok) {
+                if (data.error === 'emailNotVerified') {
+                    toast.error('ইমেইল যাচাই করা হয়নি। কোড পাঠানো হচ্ছে...');
+                    navigate('/verify-email', { state: { email: data.email } });
+                    setLoading(false);
+                    return;
+                }
                 toast.error(data.error || 'Login failed');
                 setLoading(false);
                 return;

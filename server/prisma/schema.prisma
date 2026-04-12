@@ -51,6 +51,7 @@ model User {
   districtId            Int?
   password              String
   role                  String    @default("user")
+  emailVerified         Boolean   @default(false)
   avatarUrl             String?
   cloudinaryPublicId    String?
   createdAt             DateTime  @default(now())

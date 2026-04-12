@@ -121,8 +121,8 @@ const RegistrationPage = () => {
                 return;
             }
 
-            toast.success('রেজিস্ট্রেশন সফল! লগইন পেজে যাচ্ছি...');
-            navigate('/login');
+            toast.success('রেজিস্ট্রেশন সফল! ইমেইল যাচাই করুন।');
+            navigate('/verify-email', { state: { email: data.email } });
         } catch (err) {
             console.error('Register error', err);
             toast.error('সার্ভারে সমস্যা, পরে চেষ্টা করুন');
