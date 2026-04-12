@@ -3,6 +3,22 @@ import { db } from '../db.js';
 import { hashPassword, comparePassword, generateToken } from '../utils/auth.js';
 import { validateEmail, validatePassword, validatePhone, validateName, validateLocation, getPasswordValidationError } from '../utils/validators.js';
 import { isAdminCredential } from '../utils/adminConfig.js';
+import { otpEmailHtml } from '../utils/emailTemplates.js';
+import nodemailer from 'nodemailer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../../.env'), override: true });
+
+function createEmailTransporter() {
+  const user = (process.env.GMAIL_USER || '').trim();
+  const pass = (process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '').trim();
+  if (!user || !pass) throw new Error('Missing Gmail SMTP credentials');
+  return nodemailer.createTransport({ service: 'gmail', auth: { user, pass } });
+}
 
 const router = Router();
 
@@ -193,6 +209,129 @@ router.post('/login', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /auth/forgot-password — generate & email a 4-digit OTP
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const normalizedEmail = (email as string).toLowerCase().trim();
+
+    // Find user — don't reveal whether email exists (anti-enumeration)
+    const user = await db.user.findUnique({ where: { email: normalizedEmail } });
+    if (!user) {
+      console.log(`[forgot-password] No account found for: ${normalizedEmail}`);
+      // Return success anyway so attackers can't enumerate valid emails
+      return res.json({ success: true });
+    }
+
+    // Delete any existing unused OTPs for this email
+    await db.passwordResetOTP.deleteMany({ where: { email: normalizedEmail } });
+
+    // Generate 4-digit OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    await db.passwordResetOTP.create({
+      data: { email: normalizedEmail, otp, expiresAt },
+    });
+
+    // Send OTP email
+    console.log(`[forgot-password] Sending OTP ${otp} to ${normalizedEmail}`);
+    const transporter = createEmailTransporter();
+    await transporter.sendMail({
+      from: `"আপনখোঁজ" <${process.env.GMAIL_USER}>`,
+      to: normalizedEmail,
+      subject: 'পাসওয়ার্ড রিসেট কোড — আপনখোঁজ',
+      html: otpEmailHtml(user.firstName, otp),
+    });
+    console.log(`[forgot-password] Email sent successfully to ${normalizedEmail}`);
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /auth/verify-otp — check the OTP is valid and not expired
+router.post('/verify-otp', async (req: Request, res: Response) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ error: 'Email and OTP are required' });
+
+    const normalizedEmail = (email as string).toLowerCase().trim();
+
+    const record = await db.passwordResetOTP.findFirst({
+      where: {
+        email: normalizedEmail,
+        otp: otp.toString(),
+        used: false,
+        expiresAt: { gt: new Date() },
+      },
+    });
+
+    if (!record) {
+      return res.status(400).json({ error: 'কোডটি ভুল অথবা মেয়াদ শেষ হয়ে গেছে।' });
+    }
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /auth/reset-password — verify OTP again then save new password
+router.post('/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    const normalizedEmail = (email as string).toLowerCase().trim();
+
+    // Re-verify OTP (double check — prevents skipping the verify step)
+    const record = await db.passwordResetOTP.findFirst({
+      where: {
+        email: normalizedEmail,
+        otp: otp.toString(),
+        used: false,
+        expiresAt: { gt: new Date() },
+      },
+    });
+
+    if (!record) {
+      return res.status(400).json({ error: 'কোডটি ভুল অথবা মেয়াদ শেষ হয়ে গেছে। নতুন কোডের জন্য আবার চেষ্টা করুন।' });
+    }
+
+    // Enforce password strength
+    if (!validatePassword(newPassword)) {
+      const passwordError = getPasswordValidationError(newPassword) || 'Password is too weak';
+      return res.status(400).json({ error: passwordError });
+    }
+
+    // Hash and save new password
+    const hashed = await hashPassword(newPassword);
+    await db.user.update({
+      where: { email: normalizedEmail },
+      data: { password: hashed },
+    });
+
+    // Mark OTP as used so it can't be reused
+    await db.passwordResetOTP.update({
+      where: { id: record.id },
+      data: { used: true },
+    });
+
+    return res.json({ success: true, message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

@@ -196,6 +196,21 @@ model Notification {
   @@map("notifications")
 }
 
+model Contact {
+  id          Int      @id @default(autoincrement())
+  name        String
+  email       String
+  phone       String?
+  subject     String
+  message     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([email])
+  @@index([createdAt(sort: Desc)])
+  @@map("contacts")
+}
+
 model Match {
   id                    Int       @id @default(autoincrement())
   foundReportId         Int
@@ -248,4 +263,16 @@ model SuccessStory {
   @@index([createdBy])
   @@index([publishedAt(sort: Desc)])
   @@map("success_stories")
+}
+
+model PasswordResetOTP {
+  id        Int      @id @default(autoincrement())
+  email     String
+  otp       String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@map("password_reset_otps")
 }
