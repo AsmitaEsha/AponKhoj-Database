@@ -2,6 +2,12 @@ import { db } from '../db.js';
 import { Request, Response } from 'express';
 import cloudinary from 'cloudinary';
 
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 /* ─────────────────────────────────────────────────────────────
    PUBLIC  GET /api/success-stories
    Returns only published stories (public facing)
@@ -111,7 +117,7 @@ export const getAllStoriesAdmin = async (req: Request, res: Response) => {
 ───────────────────────────────────────────────────────────── */
 export const createStory = async (req: Request, res: Response) => {
   try {
-    const adminId = (req as any).user?.id;
+    const adminId = (req as any).userId ?? (req as any).user?.id;
     const {
       title, content, summary, personName, division, district,
       daysLost, reunionDate, missingReportId, status = 'draft', imageBase64,
@@ -121,16 +127,48 @@ export const createStory = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Title, content, person name and division are required' });
     }
 
+    if (!adminId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const parsedDaysLost =
+      daysLost === undefined || daysLost === null || daysLost === ''
+        ? undefined
+        : Number(daysLost);
+    if (parsedDaysLost !== undefined && !Number.isFinite(parsedDaysLost)) {
+      return res.status(400).json({ message: 'Invalid daysLost value' });
+    }
+
+    const parsedMissingReportId =
+      missingReportId === undefined || missingReportId === null || missingReportId === ''
+        ? undefined
+        : Number(missingReportId);
+    if (parsedMissingReportId !== undefined && !Number.isInteger(parsedMissingReportId)) {
+      return res.status(400).json({ message: 'Invalid missingReportId value' });
+    }
+
+    const parsedReunionDate =
+      reunionDate === undefined || reunionDate === null || reunionDate === ''
+        ? undefined
+        : new Date(reunionDate);
+    if (parsedReunionDate && Number.isNaN(parsedReunionDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid reunionDate value' });
+    }
+
     let photoUrl: string | undefined;
     let cloudinaryPublicId: string | undefined;
 
     if (imageBase64) {
-      const upload = await cloudinary.v2.uploader.upload(imageBase64, {
-        folder: 'aponkhoj/success-stories',
-        transformation: [{ width: 1200, height: 800, crop: 'fill' }],
-      });
-      photoUrl = upload.secure_url;
-      cloudinaryPublicId = upload.public_id;
+      try {
+        const upload = await cloudinary.v2.uploader.upload(imageBase64, {
+          folder: 'aponkhoj/success-stories',
+          transformation: [{ width: 1200, height: 800, crop: 'fill' }],
+        });
+        photoUrl = upload.secure_url;
+        cloudinaryPublicId = upload.public_id;
+      } catch (uploadError) {
+        console.error('Success story image upload failed:', uploadError);
+      }
     }
 
     const story = await db.successStory.create({
@@ -141,9 +179,9 @@ export const createStory = async (req: Request, res: Response) => {
         personName,
         division,
         district,
-        daysLost: daysLost ? parseInt(daysLost) : undefined,
-        reunionDate: reunionDate ? new Date(reunionDate) : undefined,
-        missingReportId: missingReportId ? parseInt(missingReportId) : undefined,
+        daysLost: parsedDaysLost,
+        reunionDate: parsedReunionDate,
+        missingReportId: parsedMissingReportId,
         status,
         publishedAt: status === 'published' ? new Date() : undefined,
         photoUrl,
@@ -155,7 +193,8 @@ export const createStory = async (req: Request, res: Response) => {
     res.status(201).json(story);
   } catch (error) {
     console.error('Error creating story:', error);
-    res.status(500).json({ message: 'Failed to create story' });
+    const message = error instanceof Error ? error.message : 'Failed to create story';
+    res.status(500).json({ message });
   }
 };
 
