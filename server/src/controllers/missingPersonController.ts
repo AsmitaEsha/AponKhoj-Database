@@ -65,6 +65,7 @@ export const store = async (req: Request, res: Response) => {
       lastSeenDate,
       lastSeenTime,
       district,
+      districtId,
       address,
       clothingDescription,
       additionalInfo,
@@ -73,15 +74,48 @@ export const store = async (req: Request, res: Response) => {
     } = req.body;
     const userId = (req as any).userId;
 
-    const trimmedDistrict = typeof district === 'string' ? district.trim() : '';
+    // Handle districtId or district string
+    let resolvedDistrictId: number | null = null;
+    let resolvedDistrictName: string = '';
 
-    if (!name || !trimmedDistrict || !contactPersonName || !contactPhone) {
+    if (districtId) {
+      const districtRecord = await db.district.findUnique({
+        where: { id: parseInt(districtId) }
+      });
+      if (districtRecord) {
+        resolvedDistrictId = districtRecord.id;
+        resolvedDistrictName = districtRecord.name;
+      }
+    } else {
+      const trimmedDistrict = typeof district === 'string' ? district.trim() : '';
+      
+      if (trimmedDistrict) {
+        // Try to find matching district in database
+        const districtRecord = await db.district.findFirst({
+          where: {
+            OR: [
+              { name: { contains: trimmedDistrict } },
+              { bn: { contains: trimmedDistrict } }
+            ]
+          }
+        });
+
+        if (districtRecord) {
+          resolvedDistrictId = districtRecord.id;
+          resolvedDistrictName = districtRecord.name;
+        } else {
+          resolvedDistrictName = trimmedDistrict;
+        }
+      }
+    }
+
+    if (!name || !resolvedDistrictName || !contactPersonName || !contactPhone) {
       return res.status(422).json({
         success: false,
         message: 'Validation failed',
         errors: {
           name: !name ? ['Name is required'] : undefined,
-          district: !trimmedDistrict ? ['District is required'] : undefined,
+          district: !resolvedDistrictName ? ['District is required'] : undefined,
           contactPersonName: !contactPersonName ? ['Contact person name is required'] : undefined,
           contactPhone: !contactPhone ? ['Contact phone is required'] : undefined,
         },
@@ -112,7 +146,8 @@ export const store = async (req: Request, res: Response) => {
         height,
         lastSeenDate: lastSeenDate ? new Date(lastSeenDate) : null,
         lastSeenTime,
-        district: trimmedDistrict,
+        district: resolvedDistrictName,
+        districtId: resolvedDistrictId,
         address,
         clothingDescription,
         additionalInfo,
