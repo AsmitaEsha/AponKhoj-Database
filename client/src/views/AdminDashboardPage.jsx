@@ -11,6 +11,7 @@ import AdminNavbar from '../Components/AdminNavbar';
 import { AdminSidebar } from '../Components/AdminSidebar';
 import AdminReportsPage from './AdminReportsPage';
 import { ModerationSection } from './AdminModerationPage';
+import AdminSuccessStoriesSection from './AdminSuccessStoriesSection';
 
 /* ─────────────────────────────────────────────────────────────
    DATA HOOK
@@ -609,6 +610,7 @@ const SECTIONS = {
     systemReports: AdminReportsPage,
     users: UsersSection,
     analytics: AnalyticsSection,
+    successStories: AdminSuccessStoriesSection,
 };
 
 const BREADCRUMB_LABELS = {
@@ -618,7 +620,9 @@ const BREADCRUMB_LABELS = {
     systemReports: 'সিস্টেম রিপোর্ট',
     users: 'ব্যবহারকারী ব্যবস্থাপনা',
     analytics: 'বিশ্লেষণ',
+    successStories: 'সাফল্যের গল্প',
     profile: 'অ্যাডমিন প্রোফাইল'
+   
 };
 
 export default function AdminDashboardPage() {
