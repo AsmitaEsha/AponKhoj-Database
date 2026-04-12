@@ -1,26 +1,78 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Lock, Eye, EyeOff, Search, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-const DISTRICTS = ['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
 
 const RegistrationPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [divisions, setDivisions] = useState([]);
+    const [districts, setDistricts] = useState([]);
+    const [loadingDivisions, setLoadingDivisions] = useState(true);
+    const [selectedDivisionId, setSelectedDivisionId] = useState('');
+    
     const [form, setForm] = useState({
         firstName: '',
         lastName: '',
         email: '',
         phone: '',
         district: '',
+        districtId: '',
         password: '',
         password_confirmation: ''
     });
     const navigate = useNavigate();
 
+    // Fetch divisions on mount
+    useEffect(() => {
+        const fetchDivisions = async () => {
+            try {
+                const resp = await fetch('http://localhost:5000/api/divisions');
+                const data = await resp.json();
+                if (data.success) {
+                    setDivisions(data.data);
+                }
+            } catch (err) {
+                console.error('Error fetching divisions:', err);
+                toast.error('বিভাগ লোড করতে ব্যর্থ');
+            } finally {
+                setLoadingDivisions(false);
+            }
+        };
+        fetchDivisions();
+    }, []);
+
+    // Fetch districts when division changes
+    useEffect(() => {
+        if (selectedDivisionId) {
+            const division = divisions.find(d => d.id === parseInt(selectedDivisionId));
+            if (division && division.districts) {
+                setDistricts(division.districts);
+            }
+        } else {
+            setDistricts([]);
+        }
+        setForm(p => ({ ...p, district: '', districtId: '' }));
+    }, [selectedDivisionId, divisions]);
+
     const handleChange = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
+
+    const handleDivisionChange = (e) => {
+        setSelectedDivisionId(e.target.value);
+    };
+
+    const handleDistrictChange = (e) => {
+        const selectedId = e.target.value;
+        const selectedDistrict = districts.find(d => d.id === parseInt(selectedId));
+        if (selectedDistrict) {
+            setForm(p => ({
+                ...p,
+                district: selectedDistrict.name,
+                districtId: selectedId
+            }));
+        }
+    };
 
     const handleRegister = async (e) => {
         e.preventDefault();
@@ -30,7 +82,7 @@ const RegistrationPage = () => {
             return;
         }
 
-        if (!form.district) {
+        if (!form.districtId) {
             toast.error('জেলা নির্বাচন করুন');
             return;
         }
@@ -47,9 +99,15 @@ const RegistrationPage = () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    ...form,
+                    firstName: form.firstName,
+                    lastName: form.lastName,
+                    email: form.email,
+                    phone: form.phone,
                     location: form.district,
                     district: form.district,
+                    districtId: parseInt(form.districtId),
+                    password: form.password,
+                    password_confirmation: form.password_confirmation,
                 }),
             });
 
@@ -159,24 +217,46 @@ const RegistrationPage = () => {
                         <p className="text-xs text-gray-400 mt-1">বাংলাদেশ ফরম্যাট: 01XXXXXXXXX</p>
                     </div>
 
-                    {/* Location */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">জেলা/অবস্থান</label>
-                        <div className="relative">
-                            <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <select
-                                name="district"
-                                value={form.district}
-                                onChange={handleChange}
-                                required
-                                autoComplete="off"
-                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                            >
-                                <option value="">জেলা নির্বাচন করুন</option>
-                                {DISTRICTS.map(d => (
-                                    <option key={d} value={d}>{d}</option>
-                                ))}
-                            </select>
+                    {/* Division and District */}
+                    <div className="grid grid-cols-2 gap-3">
+                        {/* Division */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">বিভাগ</label>
+                            <div className="relative">
+                                <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10" />
+                                <select
+                                    value={selectedDivisionId}
+                                    onChange={handleDivisionChange}
+                                    disabled={loadingDivisions}
+                                    required
+                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100"
+                                >
+                                    <option value="">বিভাগ নির্বাচন</option>
+                                    {divisions.map(d => (
+                                        <option key={d.id} value={d.id}>{d.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* District */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">জেলা</label>
+                            <div className="relative">
+                                <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10" />
+                                <select
+                                    value={form.districtId}
+                                    onChange={handleDistrictChange}
+                                    disabled={!selectedDivisionId || districts.length === 0}
+                                    required
+                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100"
+                                >
+                                    <option value="">জেলা নির্বাচন</option>
+                                    {districts.map(d => (
+                                        <option key={d.id} value={d.id}>{d.name}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     </div>
 
