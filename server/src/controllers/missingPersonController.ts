@@ -201,6 +201,7 @@ export const getPublished = async (req: Request, res: Response) => {
   try {
     const {
       district,
+      districtId,
       age_min,
       age_max,
       gender,
@@ -216,8 +217,10 @@ export const getPublished = async (req: Request, res: Response) => {
       status: 'published',
     };
 
-    // Filter by district
-    if (district && typeof district === 'string' && district !== 'all') {
+    // Filter by district - support both districtId and district string
+    if (districtId && typeof districtId === 'string') {
+      where.districtId = parseInt(districtId);
+    } else if (district && typeof district === 'string' && district !== 'all') {
       where.district = district;
     }
 
