@@ -3,7 +3,7 @@ import { db } from '../db.js';
 import { hashPassword, comparePassword, generateToken } from '../utils/auth.js';
 import { validateEmail, validatePassword, validatePhone, validateName, validateLocation, getPasswordValidationError } from '../utils/validators.js';
 import { isAdminCredential } from '../utils/adminConfig.js';
-import { otpEmailHtml } from '../utils/emailTemplates.js';
+import { otpEmailHtml, verifyEmailHtml } from '../utils/emailTemplates.js';
 import nodemailer from 'nodemailer';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -101,22 +101,29 @@ router.post('/register', async (req: Request, res: Response) => {
       }
     });
 
-    const token = generateToken(user.id, user.role);
+    // Send email verification OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    await db.passwordResetOTP.deleteMany({ where: { email: normalizedEmail } });
+    await db.passwordResetOTP.create({ data: { email: normalizedEmail, otp, expiresAt } });
+
+    try {
+      const transporter = createEmailTransporter();
+      await transporter.sendMail({
+        from: `"আপনখোঁজ" <${process.env.GMAIL_USER}>`,
+        to: normalizedEmail,
+        subject: 'ইমেইল যাচাই কোড — আপনখোঁজ',
+        html: verifyEmailHtml(trimmedFirstName, otp),
+      });
+      console.log(`[register] Verification OTP sent to ${normalizedEmail}`);
+    } catch (emailErr) {
+      console.error('[register] Failed to send verification email:', emailErr);
+    }
 
     res.status(201).json({
-      message: 'Registration successful',
-      token,
-      user: {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        phone: user.phone,
-        district: user.district,
-        location: user.location,
-        avatarUrl: user.avatarUrl,
-        role: user.role
-      }
+      message: 'Registration successful. Please verify your email.',
+      requiresVerification: true,
+      email: normalizedEmail,
     });
   } catch (error) {
     console.error('Register error:', error);
@@ -190,6 +197,10 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    if (!user.emailVerified) {
+      return res.status(403).json({ error: 'emailNotVerified', email: user.email });
+    }
+
     const token = generateToken(user.id, user.role);
 
     res.json({
@@ -209,6 +220,82 @@ router.post('/login', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /auth/verify-email — confirm OTP and activate account
+router.post('/verify-email', async (req: Request, res: Response) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ error: 'Email and OTP are required' });
+
+    const normalizedEmail = (email as string).toLowerCase().trim();
+
+    const record = await db.passwordResetOTP.findFirst({
+      where: { email: normalizedEmail, otp: otp.toString(), used: false, expiresAt: { gt: new Date() } },
+    });
+
+    if (!record) {
+      return res.status(400).json({ error: 'কোডটি ভুল অথবা মেয়াদ শেষ হয়ে গেছে।' });
+    }
+
+    // Mark verified & mark OTP used
+    await db.user.update({ where: { email: normalizedEmail }, data: { emailVerified: true } });
+    await db.passwordResetOTP.update({ where: { id: record.id }, data: { used: true } });
+
+    const user = await db.user.findUnique({ where: { email: normalizedEmail } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const token = generateToken(user.id, user.role);
+    return res.json({
+      message: 'Email verified successfully',
+      token,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone,
+        district: user.district,
+        location: user.location,
+        avatarUrl: user.avatarUrl,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error('Verify email error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /auth/resend-verification — resend email verification OTP
+router.post('/resend-verification', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const normalizedEmail = (email as string).toLowerCase().trim();
+    const user = await db.user.findUnique({ where: { email: normalizedEmail } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.emailVerified) return res.status(400).json({ error: 'Email already verified' });
+
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    await db.passwordResetOTP.deleteMany({ where: { email: normalizedEmail } });
+    await db.passwordResetOTP.create({ data: { email: normalizedEmail, otp, expiresAt } });
+
+    const transporter = createEmailTransporter();
+    await transporter.sendMail({
+      from: `"আপনখোঁজ" <${process.env.GMAIL_USER}>`,
+      to: normalizedEmail,
+      subject: 'ইমেইল যাচাই কোড — আপনখোঁজ',
+      html: verifyEmailHtml(user.firstName, otp),
+    });
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Resend verification error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
