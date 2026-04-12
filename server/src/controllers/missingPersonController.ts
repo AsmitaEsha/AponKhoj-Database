@@ -17,24 +17,38 @@ async function notifyDistrictUsers(
   reportId: number,
   reporterUserId: number,
   district: string,
+  districtId: number | null,
   personName: string
 ): Promise<void> {
   try {
-    const normalizedDistrict = normalizeDistrictValue(district);
-    if (!normalizedDistrict) return;
+    let usersInDistrict: any[] = [];
 
-    // Find candidate users (district/location may be in either field for legacy records)
-    const candidateUsers = await db.user.findMany({
-      where: {
-        id: { not: reporterUserId },
-      },
-      select: { id: true, district: true, location: true },
-    });
+    // Prefer FK-based lookup for cleaner queries
+    if (districtId) {
+      usersInDistrict = await db.user.findMany({
+        where: {
+          id: { not: reporterUserId },
+          districtId: districtId
+        },
+        select: { id: true }
+      });
+    } else {
+      // Fallback to string-based matching for legacy records
+      const normalizedDistrict = normalizeDistrictValue(district);
+      if (!normalizedDistrict) return;
 
-    const usersInDistrict = candidateUsers.filter((u) => {
-      const userDistrict = normalizeDistrictValue(u.district || u.location);
-      return userDistrict === normalizedDistrict;
-    });
+      const candidateUsers = await db.user.findMany({
+        where: {
+          id: { not: reporterUserId },
+        },
+        select: { id: true, district: true, location: true },
+      });
+
+      usersInDistrict = candidateUsers.filter((u) => {
+        const userDistrict = normalizeDistrictValue(u.district || u.location);
+        return userDistrict === normalizedDistrict;
+      });
+    }
 
     if (usersInDistrict.length === 0) return;
 
@@ -44,6 +58,7 @@ async function notifyDistrictUsers(
         userId: u.id,
         reportId: reportId,
         district: district,
+        districtId: districtId,
         title: '🔔 আপনার এলাকায় নিখোঁজ রিপোর্ট',
         message: `আপনার এলাকায় একটি নিখোঁজ রিপোর্ট হয়েছে — "${personName}"।`,
         isRead: false,
@@ -531,7 +546,7 @@ export const approve = async (req: Request, res: Response) => {
 
     // Send area alert only after report approval/publish
     if (!wasAlreadyPublished) {
-      await notifyDistrictUsers(report.id, report.userId, report.district, report.name);
+      await notifyDistrictUsers(report.id, report.userId, report.district, report.districtId, report.name);
     }
 
     res.json({
