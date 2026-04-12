@@ -4,6 +4,57 @@ import { CloudinaryService } from '../services/cloudinaryService.js';
 
 const cloudinaryService = new CloudinaryService();
 
+function normalizeDistrictValue(value?: string | null): string {
+  return (value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+/**
+ * Notify all users in the same district about a new missing person report.
+ * Called after a report is approved and published.
+ * The reporter themselves are excluded.
+ */
+async function notifyDistrictUsers(
+  reportId: number,
+  reporterUserId: number,
+  district: string,
+  personName: string
+): Promise<void> {
+  try {
+    const normalizedDistrict = normalizeDistrictValue(district);
+    if (!normalizedDistrict) return;
+
+    // Find candidate users (district/location may be in either field for legacy records)
+    const candidateUsers = await db.user.findMany({
+      where: {
+        id: { not: reporterUserId },
+      },
+      select: { id: true, district: true, location: true },
+    });
+
+    const usersInDistrict = candidateUsers.filter((u) => {
+      const userDistrict = normalizeDistrictValue(u.district || u.location);
+      return userDistrict === normalizedDistrict;
+    });
+
+    if (usersInDistrict.length === 0) return;
+
+    // Bulk-create one area alert per user
+    await db.alertNotification.createMany({
+      data: usersInDistrict.map((u) => ({
+        userId: u.id,
+        reportId: reportId,
+        district: district,
+        title: '🔔 আপনার এলাকায় নিখোঁজ রিপোর্ট',
+        message: `আপনার এলাকায় একটি নিখোঁজ রিপোর্ট হয়েছে — "${personName}"।`,
+        isRead: false,
+      })),
+    });
+  } catch (err) {
+    // Non-critical — log but don't block the response
+    console.error('Failed to send district notifications:', err);
+  }
+}
+
 export const store = async (req: Request, res: Response) => {
   try {
     const {
@@ -22,13 +73,15 @@ export const store = async (req: Request, res: Response) => {
     } = req.body;
     const userId = (req as any).userId;
 
-    if (!name || !district || !contactPersonName || !contactPhone) {
+    const trimmedDistrict = typeof district === 'string' ? district.trim() : '';
+
+    if (!name || !trimmedDistrict || !contactPersonName || !contactPhone) {
       return res.status(422).json({
         success: false,
         message: 'Validation failed',
         errors: {
           name: !name ? ['Name is required'] : undefined,
-          district: !district ? ['District is required'] : undefined,
+          district: !trimmedDistrict ? ['District is required'] : undefined,
           contactPersonName: !contactPersonName ? ['Contact person name is required'] : undefined,
           contactPhone: !contactPhone ? ['Contact phone is required'] : undefined,
         },
@@ -59,7 +112,7 @@ export const store = async (req: Request, res: Response) => {
         height,
         lastSeenDate: lastSeenDate ? new Date(lastSeenDate) : null,
         lastSeenTime,
-        district,
+        district: trimmedDistrict,
         address,
         clothingDescription,
         additionalInfo,
@@ -410,6 +463,8 @@ export const approve = async (req: Request, res: Response) => {
       });
     }
 
+    const wasAlreadyPublished = report.approved && report.status === 'published';
+
     const updated = await db.missingPersonReport.update({
       where: { id: parseInt(id) },
       data: {
@@ -438,6 +493,11 @@ export const approve = async (req: Request, res: Response) => {
         reportId: parseInt(id),
       },
     });
+
+    // Send area alert only after report approval/publish
+    if (!wasAlreadyPublished) {
+      await notifyDistrictUsers(report.id, report.userId, report.district, report.name);
+    }
 
     res.json({
       success: true,
