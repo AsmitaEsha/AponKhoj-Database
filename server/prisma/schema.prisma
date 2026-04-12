@@ -216,3 +216,15 @@ model Match {
   @@index([matchedAt(sort: Desc)])
   @@map("matches")
 }
+
+model PasswordResetOTP {
+  id        Int      @id @default(autoincrement())
+  email     String
+  otp       String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@map("password_reset_otps")
+}
