@@ -10,6 +10,7 @@ async function main() {
     // Clear existing data (in reverse dependency order)
     console.log("🗑️  Clearing existing data...");
     await prisma.post.deleteMany({});
+    await prisma.successStory.deleteMany({});
     await prisma.alertNotification.deleteMany({});
     await prisma.notification.deleteMany({});
     await prisma.adminAction.deleteMany({});
