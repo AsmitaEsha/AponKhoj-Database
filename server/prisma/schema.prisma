@@ -39,6 +39,7 @@ model District {
   @@map("districts")
 }
 
+
 model User {
   id                    Int       @id @default(autoincrement())
   firstName             String
@@ -63,6 +64,7 @@ model User {
   notifications         Notification[]
   alertNotifications    AlertNotification[]
   districtRef           District? @relation(fields: [districtId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  successStories        SuccessStory[]      @relation("StoryCreator")
 
   @@map("User")
 }
@@ -109,6 +111,7 @@ model MissingPersonReport {
   districtRef           District? @relation(fields: [districtId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   matches               Match[]   @relation("MissingMatches")
   alertNotifications    AlertNotification[]
+  successStories        SuccessStory[]      @relation("StoryReport")
 
   @@index([userId])
   @@index([status])
@@ -271,4 +274,45 @@ model Match {
   @@index([matchType])
   @@index([matchedAt(sort: Desc)])
   @@map("matches")
+}
+
+model SuccessStory {
+  id                    Int       @id @default(autoincrement())
+  title                 String
+  content               String
+  summary               String?
+  personName            String
+  division              String
+  district              String?
+  photoUrl              String?
+  cloudinaryPublicId    String?
+  daysLost              Int?
+  reunionDate           DateTime?
+  missingReportId       Int?
+  status                String    @default("draft")  // 'draft' | 'published'
+  publishedAt           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  createdBy             Int
+
+  admin                 User      @relation("StoryCreator", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  missingReport         MissingPersonReport? @relation("StoryReport", fields: [missingReportId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([status])
+  @@index([division])
+  @@index([createdBy])
+  @@index([publishedAt(sort: Desc)])
+  @@map("success_stories")
+}
+
+model PasswordResetOTP {
+  id        Int      @id @default(autoincrement())
+  email     String
+  otp       String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@map("password_reset_otps")
 }

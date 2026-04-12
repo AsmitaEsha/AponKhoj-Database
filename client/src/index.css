@@ -14,6 +14,10 @@
   --font-family-sans: "Noto Sans Bengali", sans-serif;
 }
 
+*, *::before, *::after {
+  font-family: 'Noto Sans Bengali', sans-serif;
+}
+
 body {
   background-color: #FDFBF7;
   color: #1f2937;

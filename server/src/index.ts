@@ -19,6 +19,7 @@ import notificationRouter from './routes/notifications.js';
 import contactRouter from './routes/contact.js'; 
 import divisionsRouter from './routes/divisions.js';
 import districtsRouter from './routes/districts.js';
+import successStoriesRouter from './routes/successStories.js';
 import { db } from './db.js';
 
 const app = express();
@@ -55,6 +56,8 @@ app.use('/api/notifications', notificationRouter);
 app.use('/api/contact', contactRouter);
 app.use('/api/divisions', divisionsRouter);
 app.use('/api/districts', districtsRouter); 
+app.use('/api/contact', contactRouter); 
+app.use('/api/success-stories', successStoriesRouter);
 
 // Start server
 app.listen(PORT, () => {
@@ -63,4 +66,5 @@ app.listen(PORT, () => {
   console.log(`👨‍💼 Admin features enabled`);
   console.log(`✉️  Contact email API enabled`);
   console.log(`🗺️  Divisions & Districts API enabled`);
+  console.log(`📚 Success Stories API enabled`);
 });
