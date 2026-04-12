@@ -7,6 +7,38 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Division {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  bn        String    @unique  // Bengali name
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  districts District[]
+
+  @@map("divisions")
+}
+
+model District {
+  id          Int       @id @default(autoincrement())
+  name        String
+  bn          String    // Bengali name
+  divisionId  Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  division    Division  @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+  users       User[]
+  missingReports MissingPersonReport[]
+  foundReports   FoundPersonReport[]
+  alerts      AlertNotification[]
+
+  @@unique([name, divisionId])
+  @@index([divisionId])
+  @@index([name])
+  @@map("districts")
+}
+
 model User {
   id                    Int       @id @default(autoincrement())
   firstName             String
@@ -15,6 +47,7 @@ model User {
   phone                 String    @unique
   location              String
   district              String?
+  districtId            Int?
   password              String
   role                  String    @default("user")
   avatarUrl             String?
@@ -29,6 +62,7 @@ model User {
   reports               Report[]
   notifications         Notification[]
   alertNotifications    AlertNotification[]
+  districtRef           District? @relation(fields: [districtId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("User")
 }
@@ -59,6 +93,7 @@ model MissingPersonReport {
   lastSeenDate          DateTime?
   lastSeenTime          String?
   district              String
+  districtId            Int?
   address               String?
   clothingDescription   String?
   additionalInfo        String?
@@ -71,6 +106,7 @@ model MissingPersonReport {
   updatedAt             DateTime  @updatedAt
 
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  districtRef           District? @relation(fields: [districtId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   matches               Match[]   @relation("MissingMatches")
   alertNotifications    AlertNotification[]
 
@@ -86,6 +122,7 @@ model AlertNotification {
   userId      Int
   reportId    Int
   district    String
+  districtId  Int?
   title       String
   message     String
   isRead      Boolean  @default(false)
@@ -94,10 +131,12 @@ model AlertNotification {
 
   user        User                @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   report      MissingPersonReport @relation(fields: [reportId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  districtRef District?           @relation(fields: [districtId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([userId])
   @@index([reportId])
   @@index([district])
+  @@index([districtId])
   @@index([isRead])
   @@index([createdAt(sort: Desc)])
   @@map("alert_notifications")
@@ -115,6 +154,7 @@ model FoundPersonReport {
   foundDate             DateTime
   foundTime             String?
   district              String
+  districtId            Int?
   address               String?
   clothingDescription   String?
   additionalInfo        String?
@@ -127,6 +167,7 @@ model FoundPersonReport {
   updatedAt             DateTime  @updatedAt
 
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  districtRef           District? @relation(fields: [districtId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   matches               Match[]   @relation("FoundMatches")
 
   @@index([userId])
