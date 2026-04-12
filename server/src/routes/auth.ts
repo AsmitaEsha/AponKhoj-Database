@@ -15,15 +15,61 @@ const ADMIN_EMAILS = [
 
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { firstName, lastName, email, phone, location, district, password, password_confirmation } = req.body;
+    const { firstName, lastName, email, phone, location, district, districtId, password, password_confirmation } = req.body;
 
     const trimmedFirstName = firstName?.trim?.();
     const trimmedLastName = lastName?.trim?.();
     const normalizedEmail = email?.toLowerCase?.();
     const normalizedPhone = phone?.replace?.(/\s+/g, '');
-    const normalizedDistrict = (district || location || '').trim();
+    
+    // Support both districtId (new) and district string (legacy)
+    let resolvedDistrictId: number | null = null;
+    let resolvedDistrictName: string = '';
 
-    if (!trimmedFirstName || !trimmedLastName || !normalizedEmail || !normalizedPhone || !normalizedDistrict || !password) {
+    if (districtId) {
+      // New approach: districtId provided
+      const districtRecord = await db.district.findUnique({
+        where: { id: parseInt(districtId) }
+      });
+
+      if (!districtRecord) {
+        return res.status(400).json({ error: 'Invalid district' });
+      }
+
+      resolvedDistrictId = districtRecord.id;
+      resolvedDistrictName = districtRecord.name;
+    } else {
+      // Legacy approach: district or location string provided
+      const normalizedDistrict = (district || location || '').trim();
+      
+      if (!normalizedDistrict) {
+        return res.status(400).json({ error: 'District or location is required' });
+      }
+
+      if (!validateLocation(normalizedDistrict)) {
+        return res.status(400).json({ error: 'Invalid district' });
+      }
+
+      // Try to find matching district in database
+      const districtRecord = await db.district.findFirst({
+        where: {
+          OR: [
+            { name: { contains: normalizedDistrict } },
+            { bn: { contains: normalizedDistrict } }
+          ]
+        }
+      });
+
+      if (districtRecord) {
+        resolvedDistrictId = districtRecord.id;
+        resolvedDistrictName = districtRecord.name;
+      } else {
+        // If no match in database, keep the string as-is (backward compatibility)
+        resolvedDistrictName = normalizedDistrict;
+      }
+    }
+
+    if (!trimmedFirstName || !trimmedLastName || !normalizedEmail || !normalizedPhone || !resolvedDistrictName || !password) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
@@ -39,11 +85,7 @@ router.post('/register', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid phone number' });
     }
 
-    if (!validateLocation(normalizedDistrict)) {
-      return res.status(400).json({ error: 'Invalid district' });
-    }
-
-    // NEW: Check if email is an admin email
+    // Check if email is an admin email
     if (ADMIN_EMAILS.includes(normalizedEmail)) {
       return res.status(409).json({ error: 'This email is reserved for admin use and cannot be registered' });
     }
@@ -78,8 +120,9 @@ router.post('/register', async (req: Request, res: Response) => {
         lastName: trimmedLastName,
         email: normalizedEmail,
         phone: normalizedPhone,
-        location: normalizedDistrict,
-        district: normalizedDistrict,
+        location: resolvedDistrictName,
+        district: resolvedDistrictName,
+        districtId: resolvedDistrictId,
         password: hashedPassword,
         role: 'user'
       }
@@ -97,6 +140,7 @@ router.post('/register', async (req: Request, res: Response) => {
         email: user.email,
         phone: user.phone,
         district: user.district,
+        districtId: user.districtId,
         location: user.location,
         avatarUrl: user.avatarUrl,
         role: user.role
@@ -153,6 +197,7 @@ router.post('/login', async (req: Request, res: Response) => {
           email: adminUser.email,
           phone: adminUser.phone,
           district: adminUser.district,
+          districtId: adminUser.districtId,
           location: adminUser.location,
           avatarUrl: adminUser.avatarUrl,
           role: 'admin'
@@ -186,6 +231,7 @@ router.post('/login', async (req: Request, res: Response) => {
         email: user.email,
         phone: user.phone,
         district: user.district,
+        districtId: user.districtId,
         location: user.location,
         avatarUrl: user.avatarUrl,
         role: user.role
