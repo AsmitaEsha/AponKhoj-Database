@@ -17,6 +17,8 @@ import reportRouter from './routes/reports.js';
 import adminRouter from './routes/admin.js';
 import notificationRouter from './routes/notifications.js';
 import contactRouter from './routes/contact.js'; 
+import divisionsRouter from './routes/divisions.js';
+import districtsRouter from './routes/districts.js';
 import { db } from './db.js';
 
 const app = express();
@@ -50,7 +52,9 @@ app.use('/api/found-reports', foundPersonRouter);
 app.use('/api/reports', reportRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/notifications', notificationRouter);
-app.use('/api/contact', contactRouter); 
+app.use('/api/contact', contactRouter);
+app.use('/api/divisions', divisionsRouter);
+app.use('/api/districts', districtsRouter); 
 
 // Start server
 app.listen(PORT, () => {
@@ -58,4 +62,5 @@ app.listen(PORT, () => {
   console.log(`📧 Missing/Found Reports API enabled`);
   console.log(`👨‍💼 Admin features enabled`);
   console.log(`✉️  Contact email API enabled`);
+  console.log(`🗺️  Divisions & Districts API enabled`);
 });
