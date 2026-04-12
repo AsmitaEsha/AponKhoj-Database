@@ -115,7 +115,7 @@ const ReportMissingPage = () => {
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-gray-500 ml-1">বয়স</label>
-                                    <input name="age" value={form.age} onChange={handleChange} type="number" placeholder="বয়স" className="w-full border border-gray-100 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 bg-gray-50/50" />
+                                    <input name="age" value={form.age} onChange={handleChange} type="number" min="1" placeholder="বয়স" className="w-full border border-gray-100 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 bg-gray-50/50" />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-gray-500 ml-1">লিঙ্গ</label>
