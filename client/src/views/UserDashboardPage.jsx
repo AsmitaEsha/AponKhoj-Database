@@ -170,7 +170,7 @@ export default function UserDashboardPage() {
             const [missingRes, foundRes, notifRes] = await Promise.all([
                 axios.get(`${API_URL}/missing-reports/my`, { headers }),
                 axios.get(`${API_URL}/found-reports/my`, { headers }),
-                axios.get(`${API_URL}/notifications`, { headers }),
+                axios.get(`${API_URL}/notifications?scope=dashboard`, { headers }),
             ]);
 
             const mReports = (missingRes.data.reports || []).map(r => ({ ...r, type: 'missing' }));
@@ -200,7 +200,7 @@ export default function UserDashboardPage() {
         if (!token || unreadCount === 0) return;
         setMarkingRead(true);
         try {
-            await axios.patch(`${API_URL}/notifications/mark-all-read`, {}, {
+            await axios.patch(`${API_URL}/notifications/mark-all-read?scope=dashboard`, {}, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setUnreadCount(0);
