@@ -28,7 +28,7 @@ model User {
   adminActions          AdminAction[]
   reports               Report[]
   notifications         Notification[]
-  alertNotifications    AlertNotification[]
+  successStories        SuccessStory[]  @relation("StoryCreator")
 
   @@map("User")
 }
@@ -72,35 +72,13 @@ model MissingPersonReport {
 
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   matches               Match[]   @relation("MissingMatches")
-  alertNotifications    AlertNotification[]
+  successStories        SuccessStory[] @relation("StoryReport")
 
   @@index([userId])
   @@index([status])
   @@index([approved])
   @@index([createdAt(sort: Desc)])
   @@map("missing_person_reports")
-}
-
-model AlertNotification {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  reportId    Int
-  district    String
-  title       String
-  message     String
-  isRead      Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  report      MissingPersonReport @relation(fields: [reportId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@index([userId])
-  @@index([reportId])
-  @@index([district])
-  @@index([isRead])
-  @@index([createdAt(sort: Desc)])
-  @@map("alert_notifications")
 }
 
 model FoundPersonReport {
@@ -190,6 +168,35 @@ model Notification {
   @@index([isRead])
   @@index([createdAt(sort: Desc)])
   @@map("notifications")
+}
+
+model SuccessStory {
+  id                    Int       @id @default(autoincrement())
+  title                 String
+  content               String
+  summary               String?
+  personName            String
+  division              String
+  district              String?
+  photoUrl              String?
+  cloudinaryPublicId    String?
+  daysLost              Int?
+  reunionDate           DateTime?
+  missingReportId       Int?
+  status                String    @default("draft")  // 'draft' | 'published'
+  publishedAt           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  createdBy             Int
+
+  admin                 User      @relation("StoryCreator", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  missingReport         MissingPersonReport? @relation("StoryReport", fields: [missingReportId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([status])
+  @@index([division])
+  @@index([createdBy])
+  @@index([publishedAt(sort: Desc)])
+  @@map("success_stories")
 }
 
 model Match {
